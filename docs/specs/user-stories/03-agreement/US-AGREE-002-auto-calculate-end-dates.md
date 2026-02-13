@@ -14,9 +14,7 @@ As a parking lot admin, I want the system to automatically calculate end dates b
 - **AC5**: Calculation server-side (DB function or API)
 - **AC6**: End date read-only in UI (cannot manually edit)
 - **AC7**: Agreement detail shows rental duration: "1 個月 (28 天)"
-- **AC8**: Daily batch job (cron) handles automatic status transitions:
-  - `pending` agreements: if current_date >= start_date → status="active"
-  - `active` agreements: if current_date > end_date → status="expired"
+- **AC8**: Agreement status (pending/active/expired) is computed on-the-fly from dates — no cron job required (see US-AGREE-006)
 - **AC9**: **Future Enhancement (Phase 2/3)**: Allow admin to override calculated end_date with custom date for non-standard agreements (e.g., partial month rentals, special promotions)
 
 ## Business Rules
@@ -24,7 +22,7 @@ As a parking lot admin, I want the system to automatically calculate end dates b
 - **Immutable End Date (Phase 1)**: Cannot change after creation (must terminate and recreate)
 - **Edge Cases**: Use PostgreSQL interval addition (not simple +30 days) to handle month-end correctly
 - **Date-Only Fields**: No time component (midnight UTC assumed)
-- **Automatic Status Transitions**: Cron job runs daily at midnight Taiwan time (see US-AGREE-006)
+- **Status Computation**: Agreement status (pending/active/expired) computed from dates on-the-fly — no cron job (see US-AGREE-006)
 - **Custom End Dates (Future Enhancement)**: Phase 1 always auto-calculates. Future phases will allow manual override for special cases (e.g., partial month rentals, corporate contracts, promotional rates)
 
 ## Implementation Notes

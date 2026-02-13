@@ -5,7 +5,7 @@
 
 ## MVP Summary
 
-35 user stories across 7 domains covering the complete CRUD lifecycle for parking operations: manage sites/spaces/tags, onboard customers, create agreements, track payments, with audit logging, localization, and security.
+35 user stories across 7 domains (net: +1 agreement list, -1 payment list) covering the complete CRUD lifecycle for parking operations: manage sites/spaces/tags, onboard customers, create agreements, track payments, with audit logging, localization, and security.
 
 ## In Scope (Phase 1 MVP)
 
@@ -34,7 +34,7 @@
 
 **Covers**: Name + phone composite unique, contact_phone field, no deletion (permanent records), cross-page navigation to agreements.
 
-### 03-agreement — Agreement Management (8 stories)
+### 03-agreement — Agreement Management (9 stories)
 
 | ID | Story | Sprint |
 |----|-------|--------|
@@ -46,18 +46,18 @@
 | US-AGREE-006 | Agreement Status (Computed + Termination) | Sprint 3 |
 | US-AGREE-007 | All Agreement Types (Daily/Monthly/Quarterly/Yearly) | Sprint 3 |
 | US-AGREE-008 | Cross-Page Navigation | Sprint 4 |
+| US-AGREE-009 | Agreement List View (with Payment Status) | Sprint 4 |
 
-**Covers**: 4 agreement types, computed status from dates, manual termination, license plate requirement, renewal flow with pre-fill, double-booking prevention, cross-domain navigation.
+**Covers**: 4 agreement types, computed status from dates, manual termination, license plate requirement, renewal flow with pre-fill, double-booking prevention, cross-domain navigation, agreement list with payment summary cards and overdue indicators.
 
-### 04-payment — Payment Management (3 stories)
+### 04-payment — Payment Management (2 stories)
 
 | ID | Story | Sprint |
 |----|-------|--------|
 | US-PAY-001 | Payment Lifecycle (Auto-Generate, Edit, Void) | Sprint 3 |
 | US-PAY-002 | Record Payment (Manual Completion) | Sprint 3 |
-| US-PAY-003 | View Payment History/List | Sprint 4 |
 
-**Covers**: Auto-generated on agreement creation, manual recording with bank reference, auto-void on termination, editable amounts with audit trail, overdue indicators, payment list with summary stats.
+**Covers**: Auto-generated on agreement creation, manual recording with bank reference, auto-void on termination, editable amounts with audit trail. Payment list view merged into US-AGREE-009 (agreement list with payment status column).
 
 ### 06-system-audit — System Audit (3 stories)
 
@@ -109,8 +109,8 @@
 |--------|-------|-------|-------------|
 | Sprint 1 | 1-2 | Foundation: Sites, spaces, tags, customers, auth, localization, audit framework | 14 |
 | Sprint 2 | 3-4 | Enhanced views: Pricing model, space list, customer search, RBAC, privacy | 8 |
-| Sprint 3 | 5-6 | Core business: Agreements, payments, status lifecycle | 9 |
-| Sprint 4 | 7-8 | Polish: Payment list, cross-nav, audit viewer, export | 4 |
+| Sprint 3 | 5-6 | Core business: Agreements, payments, status lifecycle | 8 |
+| Sprint 4 | 7-8 | Polish: Agreement list, cross-nav, audit viewer, export | 5 |
 
 ## Key Architectural Decisions
 

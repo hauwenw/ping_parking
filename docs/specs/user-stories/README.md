@@ -29,16 +29,16 @@ docs/specs/user-stories/
 │   ├── US-CUST-003-edit-customer.md
 │   ├── US-CUST-004-search-filter-customers.md
 │   └── US-CUST-005-link-to-agreement.md
-├── 03-agreement/          # Agreement Management (8 stories) ✅ MVP
+├── 03-agreement/          # Agreement Management (9 stories) ✅ MVP
 │   ├── README.md
 │   ├── US-AGREE-001-create-monthly-agreement.md
 │   ├── US-AGREE-002-auto-calculate-end-dates.md
-│   └── ... (6 more stories)
-├── 04-payment/            # Payment Management (3 stories) ✅ MVP
+│   ├── ... (5 more stories)
+│   └── US-AGREE-009-agreement-list-view.md  ← includes payment status
+├── 04-payment/            # Payment Management (2 stories) ✅ MVP
 │   ├── README.md
 │   ├── US-PAY-001-payment-lifecycle.md
-│   ├── US-PAY-002-record-payment.md
-│   └── US-PAY-003-view-payment-history.md
+│   └── US-PAY-002-record-payment.md
 ├── 06-system-audit/       # System Audit (3 stories) ✅ MVP
 │   ├── README.md
 │   ├── US-AUDIT-001-view-audit-log.md
@@ -65,8 +65,8 @@ docs/specs/user-stories/
 |-----------|--------|-------------|--------|
 | `01-space/` | Parking Space Management | 6 | ✅ Complete |
 | `02-customer/` | Customer Management | 5 | ✅ Complete |
-| `03-agreement/` | Agreement Management | 8 | ✅ Complete |
-| `04-payment/` | Payment Management | 3 | ✅ Complete |
+| `03-agreement/` | Agreement Management | 9 | ✅ Complete |
+| `04-payment/` | Payment Management | 2 | ✅ Complete |
 | `06-system-audit/` | System Audit | 3 | ✅ Complete |
 | `10-localization/` | Localization | 4 | ✅ Complete |
 | `12-security/` | Security & Auth | 6 | ✅ Complete |

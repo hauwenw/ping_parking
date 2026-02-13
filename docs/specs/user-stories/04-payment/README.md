@@ -1,7 +1,7 @@
 # Payment Management Stories
 
-**Total Stories**: 3 (all Must Have)
-**Sprint**: Sprint 3 (2 stories) + Sprint 4 (1 story)
+**Total Stories**: 2 (all Must Have)
+**Sprint**: Sprint 3 (2 stories)
 
 ## Must Have Stories
 
@@ -9,7 +9,8 @@
 |----|-------|----------|--------|
 | US-PAY-001 | Payment Lifecycle (Auto-Generate, Edit, Void) | Must Have | Sprint 3 |
 | US-PAY-002 | Record Payment (Manual Completion) | Must Have | Sprint 3 |
-| US-PAY-003 | View Payment History/List | Must Have | Sprint 4 |
+
+**Note**: The payment list view (US-PAY-003) has been merged into US-AGREE-009 (Agreement List View with Payment Status). Since payments are 1:1 with agreements, a separate payment list page is unnecessary — payment status, overdue indicators, and summary cards are displayed on the agreement list page. The US-PAY-003 file is retained for reference but is no longer part of the MVP scope.
 
 ## Overview
 
@@ -25,7 +26,7 @@ Manual offline payment tracking for Phase 1. Payments are auto-generated when ag
 payments table:
 ├── id (UUID, primary key)
 ├── agreement_id (UUID, foreign key) - 1:1 relationship
-├── amount (INTEGER) - Payment amount in NT$ cents or whole dollars
+├── amount (INTEGER) - Payment amount in NT$ whole dollars
 ├── original_amount (INTEGER) - Preserved when amount is edited
 ├── adjustment_reason (TEXT) - Required when amount changed
 ├── due_date (DATE) - When payment is due (= agreement start_date)

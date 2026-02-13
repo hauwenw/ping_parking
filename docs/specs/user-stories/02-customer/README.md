@@ -1,15 +1,15 @@
 # Customer Management Stories
 
-**Total Stories**: 6 (5 Must Have, 1 Should Have)
-**Sprint**: Sprint 2 (Weeks 3-4)
+**Total Stories**: 5 (all Must Have)
+**Sprint**: Sprint 1 (3 stories) + Sprint 2 (2 stories)
 
 ## Must Have Stories
 
 | ID | Story | Priority | Sprint |
 |----|-------|----------|--------|
-| US-CUST-001 | Create/Register New Customer | Must Have | Sprint 2 |
-| US-CUST-002 | View Customer Detail | Must Have | Sprint 2 |
-| US-CUST-003 | Edit Customer Information | Must Have | Sprint 2 |
+| US-CUST-001 | Create/Register New Customer | Must Have | Sprint 1 |
+| US-CUST-002 | View Customer Detail | Must Have | Sprint 1 |
+| US-CUST-003 | Edit Customer Information | Must Have | Sprint 1 |
 | US-CUST-004 | Search and Filter Customers | Must Have | Sprint 2 |
 | US-CUST-005 | Link Customer to Agreement | Must Have | Sprint 2 |
 

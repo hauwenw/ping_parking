@@ -72,14 +72,16 @@ This ensures you're working with current, accurate technical specifications rath
 
 ### Frontend Structure
 
-**Navigation Hierarchy**:
-1. 儀表板 (Dashboard) - Tag stats, occupancy, alerts
-2. 停車場管理 (Site Management) - Grid layout showing spaces with color-coded tags
-3. 客戶管理 (Customer Management) - Customer list with active agreement counts
-4. 合約管理 (Agreement Management) - License plate tracking with cross-page navigation
-5. 付款管理 (Payment Management) - Payment history with agreement links
-6. 候補名單 (Waiting List) - Manual FIFO queues by site
-7. 系統設定 (System Settings) - Tag configuration, admin settings
+**Navigation Hierarchy** (MVP):
+1. 停車場管理 (Site/Space Management) - Table view with tag/status filters
+2. 客戶管理 (Customer Management) - Customer list with active agreement counts
+3. 合約管理 (Agreement Management) - Agreement list with payment status, cross-page navigation
+4. 系統設定 (System Settings) - Tag configuration, site settings, admin settings
+5. 系統紀錄 (Audit Log) - Activity log viewer with export
+
+**Deferred to Phase 2**:
+6. 儀表板 (Dashboard) - Tag stats, occupancy, alerts
+7. 候補名單 (Waiting List) - Manual FIFO queues by site
 8. 報表 (Reports) - Occupancy, revenue, late payments
 
 **UI/UX Patterns**:
@@ -160,7 +162,7 @@ Implement using Supabase database triggers or middleware, NOT client-side loggin
 ### Payment Processing
 - Payments are recorded manually (no gateway in Phase 1)
 - One payment record per agreement (not installments)
-- Payment status: pending/completed/refunded
+- Payment status: pending/completed/voided
 - Payment date may differ from agreement start date
 - Bank reference required for audit purposes
 

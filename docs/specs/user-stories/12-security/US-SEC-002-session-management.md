@@ -25,7 +25,7 @@ So that my data remains accessible during work but secured when I'm away.
 
 - Session timeout: 24 hours of inactivity (user can extend with "Remember Me")
 - Token refresh: Automatic silent refresh 5 minutes before expiration
-- Concurrent sessions: Not allowed (new login invalidates previous session for same user)
+- Concurrent sessions: Allowed. Each family member should have their own admin account (created via Supabase Auth dashboard) for better audit trail accountability. Multiple devices/sessions per account are permitted.
 - Activity tracking: Any API call or page navigation resets inactivity timer
 
 ## UI Requirements

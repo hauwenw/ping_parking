@@ -8,11 +8,11 @@ As a parking lot admin, I want the system to prevent creating overlapping agreem
 
 ## Acceptance Criteria
 - **AC1**: Admin selects space + date range that overlaps existing agreement → Error: "此車位在選定日期已被分配 (2026-02-01 至 2026-03-01)"
-- **AC2**: Date overlap validation query:
+- **AC2**: Date overlap validation query (checks all non-terminated agreements):
   ```sql
   SELECT * FROM agreements
   WHERE space_id = :space_id
-  AND status IN ('pending', 'active')
+  AND status != 'terminated'
   AND (start_date, end_date) OVERLAPS (:new_start, :new_end)
   ```
   If returns rows → Block creation
@@ -28,8 +28,8 @@ As a parking lot admin, I want the system to prevent creating overlapping agreem
 
 ## Business Rules
 - **Date Range Validation**: Space can have multiple agreements if date ranges don't overlap
-- **Both Statuses Checked**: Validate against `pending` AND `active` agreements
-- **Historical Agreements**: `expired` and `terminated` agreements don't block (date is in past)
+- **Non-Terminated Check**: Validate against all non-terminated agreements (status != 'terminated'). Expired agreements naturally don't overlap with future dates.
+- **Terminated Agreements**: Only terminated agreements are excluded from overlap checks (their date range is released)
 - **Atomicity**: Validation + creation in single transaction
 - **Space Status**: Computed field - only "occupied" if current_date is within an active agreement's date range
 
@@ -47,7 +47,7 @@ BEGIN
     SELECT 1 FROM agreements
     WHERE space_id = NEW.space_id
     AND id != COALESCE(NEW.id, -1)  -- Exclude current record on UPDATE
-    AND status IN ('pending', 'active')  -- Only check future/current agreements
+    AND status != 'terminated'  -- Only terminated agreements release their date range
     AND (NEW.start_date, NEW.end_date) OVERLAPS (start_date, end_date)
   ) THEN
     RAISE EXCEPTION '此車位在選定日期已被分配';

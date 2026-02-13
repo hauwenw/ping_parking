@@ -40,7 +40,7 @@ npx supabase db push    # Push migrations to remote
 ### Database Schema (12 Core Tables)
 
 **Primary Entities**:
-- `customers` - Customer records with name, phone, email (NO national ID for privacy)
+- `customers` - Customer records with name, phone, contact_phone, email (NO national ID for privacy). Unique constraint on (name, phone).
 - `spaces` - Parking spaces with site_id, name, tags[] (array), status, custom_price
 - `agreements` - Rental contracts linking customer + space + license_plate with agreement_type (daily/monthly/quarterly/yearly)
 - `payments` - Payment records linked to agreements with bank references
@@ -80,11 +80,25 @@ npx supabase db push    # Push migrations to remote
 
 Tags replace fixed categories with flexible, color-coded labels that support:
 - Multiple tags per space (e.g., `['有屋頂', 'VIP', '大車位']`)
-- Custom pricing multipliers (Base Price × Tag Multipliers = Final Price)
+- Optional tag-based pricing (see Pricing Model below)
 - Visual indicators via color dots on space grids
 - Dynamic filtering and reporting by tag combinations
 
 **Implementation**: Use PostgreSQL array type, NOT junction tables. Query with `@>` operator for tag filtering.
+
+### Pricing Model
+
+Three-tier pricing hierarchy (see US-SPACE-003):
+1. **Site base price** - Default monthly/daily rates per site (e.g., Site A: monthly=3600, daily=150)
+2. **Tag price** - Tags can optionally define prices; when added to space, space price updates to tag price
+3. **Custom space price** - Admin can manually override price per space
+
+**Priority**: Tag price > Custom price > Site base price
+
+**Key behaviors**:
+- Adding tag with price → Space price updates immediately
+- Removing tag → Price stays (does NOT revert)
+- Agreement price = immutable snapshot at creation time (space price changes don't affect existing agreements)
 
 ### CSV Import System
 
@@ -119,9 +133,16 @@ Implement using Supabase database triggers or middleware, NOT client-side loggin
 
 ### Agreement Lifecycle
 - Start date + agreement_type determines end_date automatically
-- Status transitions: pending → active → expired/terminated
+- Status computed from dates (pending/active/expired) or manually set (terminated)
 - Cannot delete agreements with associated payments (soft delete only)
 - End date calculation: monthly (+1mo), quarterly (+3mo), yearly (+1yr), daily (+1d)
+
+### Payment Lifecycle (see US-PAY-001)
+- **One payment per agreement**: Auto-generated at agreement creation with amount = agreement price
+- **Payment amount**: Editable by admin with logged reason (e.g., discounts)
+- **Termination impact**: Pending payments auto-voided when agreement is terminated; completed payments unchanged
+- **No partial payments** in Phase 1: Full amount only
+- **Status flow**: pending → completed / voided (no reactivation)
 
 ### Payment Processing
 - Payments are recorded manually (no gateway in Phase 1)
@@ -139,7 +160,7 @@ Implement using Supabase database triggers or middleware, NOT client-side loggin
 ## Localization Requirements
 
 All UI text, validation messages, and notifications must use Traditional Chinese:
-- Phone format: `09XX-XXX-XXX` with validation
+- Phone format: Stored as `09XXXXXXXX` (no dashes), displayed as `09XX-XXX-XXX`
 - Currency: `NT$1,234` (comma separators)
 - Date format: `YYYY年MM月DD日` or ISO for forms
 - Number format: Arabic numerals with Chinese units

@@ -23,7 +23,7 @@ So that only authorized users can access and manage parking lot data.
 
 ## Business Rules
 
-- Admin accounts created via Supabase Auth dashboard (no self-registration)
+- Admin accounts created via Supabase Auth dashboard (no self-registration). Each family member should have their own account for audit trail accountability.
 - Minimum password strength: 8 characters, mix of letters and numbers
 - Session timeout: 24 hours of inactivity
 - Failed login lockout: 5 failed attempts = 15-minute account lockout
@@ -50,6 +50,8 @@ So that only authorized users can access and manage parking lot data.
 
 ## Test Data
 
-- Valid admin: admin@ping.tw / Password123
+- Valid admin 1: admin1@ping.tw / Password123 (e.g., family member A)
+- Valid admin 2: admin2@ping.tw / Password456 (e.g., family member B)
+- Both logged in simultaneously on different devices → Both sessions active
 - Invalid email: invalid@example.com / Password123 → Error
-- Invalid password: admin@ping.tw / WrongPass → Error
+- Invalid password: admin1@ping.tw / WrongPass → Error

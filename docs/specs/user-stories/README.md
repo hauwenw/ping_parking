@@ -73,7 +73,7 @@ docs/specs/user-stories/
 | Prefix | Domain | Example |
 |--------|--------|---------|
 | `SPACE` | Parking Space Management | US-SPACE-001 |
-| `CUST` | Customer Management | US-CUST-001 |
+| `CUST` | Customer Ma  nagement | US-CUST-001 |
 | `AGREE` | Agreement Management | US-AGREE-001 |
 | `PAY` | Payment Tracking | US-PAY-001 |
 | `WAIT` | Waiting List | US-WAIT-001 |

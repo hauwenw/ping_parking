@@ -48,6 +48,6 @@ So that I can track who changed what data and when for accountability and troubl
 
 ## Test Data
 
-- Customer update log: phone change from 0912-345-678 to 0912-999-888
+- Customer update log: phone change from 0912345678 to 0912999888
 - Agreement creation log: space A區-01, license ABC-1234
 - CSV import log: 50 customers imported

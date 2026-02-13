@@ -35,6 +35,19 @@ npx supabase migration new <name>  # Create new migration
 npx supabase db push    # Push migrations to remote
 ```
 
+## Documentation and Technical References
+
+When you need to check technical specifications, API documentation, or implementation details for the tech stack:
+
+**Use context7 MCP server** for up-to-date documentation:
+- Next.js 14 features and APIs
+- Supabase client libraries and database operations
+- Tailwind CSS utilities and configuration
+- shadcn/ui component APIs
+- TypeScript best practices
+
+This ensures you're working with current, accurate technical specifications rather than relying on potentially outdated information.
+
 ## Architecture Overview
 
 ### Database Schema (12 Core Tables)

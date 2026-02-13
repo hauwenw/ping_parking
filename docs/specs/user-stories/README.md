@@ -4,7 +4,8 @@
 
 This directory contains comprehensive, feature-level user stories derived from `init_draft.md` requirements. These stories guide Phase 1 development with a focus on business value, clear acceptance criteria, and MoSCoW prioritization.
 
-**Total Stories**: 72 (46 Must Have, 22 Should Have, 4 Could Have)
+**Phase 1 MVP Stories**: 35 (all Must Have) — See `docs/specs/mvp-scope.md`
+**Phase 2 Stories**: To be written (waiting list, bulk operations, reporting, etc.)
 
 ## Story Organization
 
@@ -13,50 +14,72 @@ Stories are organized into domain-specific directories with **one file per story
 ```
 docs/specs/user-stories/
 ├── README.md (this file)
-├── 03-agreement/          # Agreement Management (8 stories)
+├── 01-space/              # Parking Space Management (6 stories) ✅ MVP
+│   ├── README.md
+│   ├── US-SPACE-001-site-configuration.md
+│   ├── US-SPACE-002-manage-spaces.md
+│   ├── US-SPACE-003-pricing-model.md
+│   ├── US-SPACE-004-tag-management.md
+│   ├── US-SPACE-005-space-list-view.md
+│   └── US-SPACE-006-view-space-detail.md
+├── 02-customer/           # Customer Management (5 stories) ✅ MVP
+│   ├── README.md
+│   ├── US-CUST-001-create-customer.md
+│   ├── US-CUST-002-view-customer-detail.md
+│   ├── US-CUST-003-edit-customer.md
+│   ├── US-CUST-004-search-filter-customers.md
+│   └── US-CUST-005-link-to-agreement.md
+├── 03-agreement/          # Agreement Management (8 stories) ✅ MVP
 │   ├── README.md
 │   ├── US-AGREE-001-create-monthly-agreement.md
 │   ├── US-AGREE-002-auto-calculate-end-dates.md
 │   └── ... (6 more stories)
-├── 06-system-audit/       # System Audit (3 stories)
+├── 04-payment/            # Payment Management (3 stories) ✅ MVP
+│   ├── README.md
+│   ├── US-PAY-001-payment-lifecycle.md
+│   ├── US-PAY-002-record-payment.md
+│   └── US-PAY-003-view-payment-history.md
+├── 06-system-audit/       # System Audit (3 stories) ✅ MVP
 │   ├── README.md
 │   ├── US-AUDIT-001-view-audit-log.md
 │   ├── US-AUDIT-002-auto-log-actions.md
 │   └── US-AUDIT-003-export-audit-log.md
-├── 10-localization/       # Localization (4 stories)
+├── 09-ui-ux/              # UI/UX Specifications 📅 Phase 2
+│   └── README.md (page inventory only)
+├── 10-localization/       # Localization (4 stories) ✅ MVP
 │   ├── README.md
 │   ├── US-LOC-001-traditional-chinese-ui.md
 │   ├── US-LOC-002-taiwan-phone-format.md
 │   ├── US-LOC-003-twd-currency-format.md
 │   └── US-LOC-004-taiwan-date-format.md
-└── 12-security/           # Security & Auth (6 stories)
+└── 12-security/           # Security & Auth (6 stories) ✅ MVP
     ├── README.md
     ├── US-SEC-001-admin-authentication.md
     ├── US-SEC-002-session-management.md
     └── ... (4 more stories)
 ```
 
-### Completed Domains (21 stories written)
+### Phase 1 MVP Domains (35 stories written)
 
-| Directory | Domain | Story Count | Priority Mix | Status |
-|-----------|--------|-------------|--------------|--------|
-| `03-agreement/` | Agreement Management | 8 | Must: 8 | ✅ Complete |
-| `06-system-audit/` | System Audit | 3 | Must: 3 | ✅ Complete |
-| `10-localization/` | Localization | 4 | Must: 4 | ✅ Complete |
-| `12-security/` | Security & Auth | 6 | Must: 6 | ✅ Complete |
+| Directory | Domain | Story Count | Status |
+|-----------|--------|-------------|--------|
+| `01-space/` | Parking Space Management | 6 | ✅ Complete |
+| `02-customer/` | Customer Management | 5 | ✅ Complete |
+| `03-agreement/` | Agreement Management | 8 | ✅ Complete |
+| `04-payment/` | Payment Management | 3 | ✅ Complete |
+| `06-system-audit/` | System Audit | 3 | ✅ Complete |
+| `10-localization/` | Localization | 4 | ✅ Complete |
+| `12-security/` | Security & Auth | 6 | ✅ Complete |
 
-### Pending Domains (25 Must Have stories remaining)
+### Phase 2 Domains (stories not yet written)
 
-| Domain | Story Count | Priority Mix | Status |
-|--------|-------------|--------------|--------|
-| Parking Space Management | 10 | Must: 6, Should: 3, Could: 1 | ⏳ Planned |
-| Customer Management | 6 | Must: 5, Should: 1 | ⏳ Planned |
-| Payment Tracking | 5 | Must: 3, Should: 1, Could: 1 | ⏳ Planned |
-| Waiting List | 4 | Should: 4 | ⏳ Planned |
-| Bulk Operations (CSV Import) | 7 | Should: 7 | ⏳ Planned |
-| User Workflows (cross-domain) | 3 | Must: 1, Should: 1, Could: 1 | ⏳ Planned |
-| UI/UX Specifications | 8 | Must: 8 | ⏳ Planned |
-| Reporting & Analytics | 4 | Must: 2, Should: 2 | ⏳ Planned |
+| Domain | Estimated Stories | Status | Reason Deferred |
+|--------|-------------------|--------|-----------------|
+| `05-waiting-list/` | ~3-4 | 📅 Phase 2 | Not critical for launch — can manage informally |
+| `07-bulk-operations/` | ~3-4 | 📅 Phase 2 | Manual entry sufficient for ~100 spaces at launch |
+| `08-user-workflows/` | ~1-2 | 📅 Phase 2 | Core workflows already embedded in domain stories |
+| `09-ui-ux/` | ~8 | 📅 Phase 2 | UI requirements already specified in each domain story |
+| `11-reporting/` | ~2-3 | 📅 Phase 2 | Payment list + space list serve as interim reporting |
 
 ## Story Numbering Scheme
 
@@ -101,76 +124,32 @@ US-SEC-001: Admin authentication with Supabase Auth
 
 ## MoSCoW Prioritization
 
-### Must Have (46 stories - Phase 1 Core)
+### Phase 1 MVP (35 stories)
 
-**Definition**: Essential features without which the system cannot launch or core business operations cannot function.
+**Definition**: Essential features for the system to launch and support core parking lot operations.
 
-**Characteristics**:
-- Critical for Phase 1 MVP launch (Weeks 1-8)
-- Non-negotiable functionality
-- Required for basic parking lot operations
-- Legal/compliance requirements (e.g., privacy, audit logging)
+**Domains**: Space, Customer, Agreement, Payment, Audit, Localization, Security
 
-**Examples**:
-- Create/view/edit spaces, customers, agreements
-- Space allocation workflow
-- Taiwan localization (phone/currency/date formats)
-- Admin authentication and audit logging
-- Dashboard with occupancy statistics
-
-**Sprint Allocation**: ~11 stories per sprint across 4 sprints
+**Sprint Allocation**: 4 sprints across 8 weeks (~9 stories per sprint)
 
 ---
 
-### Should Have (22 stories - Phase 1 Enhanced)
+### Phase 2 (stories not yet written)
 
-**Definition**: Important features that add significant value but system can launch without them.
+**Definition**: Important features that enhance operations but are not required for launch.
 
-**Characteristics**:
-- Enhances user experience or efficiency
-- Can be deferred to Week 9+ if timeline pressure
-- Typically bulk operations or advanced features
-- May require more development time
-
-**Examples**:
-- CSV import for all 6 entity types
-- Waiting list management
-- Tag-based pricing multipliers
-- Advanced reporting (revenue, customer summary)
-
-**Sprint Allocation**: Week 9 or post-launch
+**Planned Domains**:
+- **Waiting list**: FIFO queue per site, manual allocation
+- **Bulk operations**: CSV import for 6 entity types
+- **Reporting**: Occupancy dashboard, revenue/late payment reports
+- **UI/UX stories**: Separate UI specs (currently embedded in domain stories)
+- **User workflows**: Separate end-to-end journey documentation
 
 ---
 
-### Could Have (4 stories - Phase 2)
+### Phase 3+ (Roadmap)
 
-**Definition**: Nice-to-have features that can be added post-launch without impacting core operations.
-
-**Characteristics**:
-- Phase 2 roadmap (Q2 2026)
-- Adds convenience or advanced capabilities
-- Lower ROI relative to effort
-- Can be prioritized later based on user feedback
-
-**Examples**:
-- Agreement auto-renewal
-- Advanced analytics dashboard
-- Export reports to PDF/Excel
-- Bulk edit operations
-
-**Sprint Allocation**: Q2 2026
-
----
-
-### Won't Have (Phase 3+ Roadmap)
-
-**Definition**: Out of scope for initial launch; requires major investment or external dependencies.
-
-**Characteristics**:
-- Phase 3 or beyond (Q4 2026+)
-- Requires significant technical complexity
-- May involve third-party integrations
-- Strategic long-term features
+**Definition**: Out of scope; requires major investment or external dependencies.
 
 **Examples**:
 - Payment gateway integration
@@ -393,11 +372,11 @@ All user stories are mapped to:
 
 ## Success Criteria
 
-✅ **Complete Coverage**: All ~57 capabilities from init_draft.md represented in 72 stories
-✅ **Clear Priorities**: 46 Must Have stories clearly identified for Phase 1 core
+✅ **MVP Coverage**: 35 stories covering all core CRUD operations for parking management
+✅ **Clear Phasing**: MVP (Phase 1) vs deferred (Phase 2) clearly separated
 ✅ **Traceability**: Every story links back to init_draft.md source lines
 ✅ **Consistent Format**: All stories follow appropriate template
-✅ **Acceptance Criteria**: Every story has 3-5 specific, testable ACs
+✅ **Acceptance Criteria**: Every story has specific, testable ACs
 ✅ **Traditional Chinese**: All UI-related ACs include Chinese copy
 ✅ **Dependencies**: All cross-story dependencies documented
 ✅ **Test Data**: All stories include concrete test data examples

@@ -1,11 +1,11 @@
 # UI/UX Specifications - Ping Parking Management System
 
-**Total Stories**: 8 (All Must Have)
-**Sprint**: Sprint 5 (Weeks 9-10) - Written AFTER domain stories complete
+**Total Stories**: 8 (planned)
+**Status**: **Phase 2** — UI requirements are currently embedded in each domain story. Separate UI stories will be written when needed for advanced layout, responsive design, and component library specifications.
 
 ## Overview
 
-This directory defines the user interface and user experience for the admin web application. The UI overview below establishes page structure and navigation for Phase 1 Must Have features. Detailed UI stories (US-UI-001 through US-UI-008) will be written after all domain stories are complete.
+This directory defines the user interface and user experience for the admin web application. The UI overview below establishes page structure and navigation. Detailed UI stories (US-UI-001 through US-UI-008) are deferred to Phase 2 since each domain story already contains its own UI requirements section.
 
 **Purpose of This Document**: Provide page inventory and URL structure so domain stories can reference pages consistently.
 

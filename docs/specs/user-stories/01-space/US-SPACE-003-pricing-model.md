@@ -188,10 +188,10 @@ function calculateAgreementPrice(spaceId: string, agreementType: string): number
 CLAUDE.md (tag-based pricing), init_draft.md (space pricing)
 
 ## Dependencies
-- US-SPACE-001 (create space - not yet written)
-- US-SPACE-002 (edit space - not yet written)
-- US-TAG-001 (create/edit tags - not yet written)
-- US-AGREE-001 (create agreement)
+- US-SPACE-001 (site configuration — base prices defined here)
+- US-SPACE-002 (space management — price inheritance on creation)
+- US-SPACE-004 (tag management — tag pricing integration)
+- US-AGREE-001 (create agreement — price snapshot)
 - US-LOC-003 (TWD currency format)
 - US-AUDIT-002 (audit logging)
 

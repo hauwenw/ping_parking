@@ -37,8 +37,8 @@ def _to_response(a) -> AgreementResponse:
     # Decrypt license plates for display
     try:
         plates = decrypt_license_plate(a.license_plates)
-    except Exception:
-        plates = "[已加密]"  # Never expose raw ciphertext
+    except (ValueError, Exception):
+        plates = "[已加密]"  # Never expose raw ciphertext on decrypt failure
 
     return AgreementResponse(
         id=a.id,

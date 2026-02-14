@@ -215,8 +215,8 @@ async def seed() -> None:
             )
             session.add(payment)
 
-            space.status = "occupied"
-            print(f"  Created agreement: {ac['customer']} → {ac['space']} ({ac['type']})")
+            space.status = "occupied" if end_date >= today else "available"
+            print(f"  Created agreement: {ac['customer']} → {ac['space']} ({ac['type']}, {'active' if end_date >= today else 'expired'})")
 
         await session.commit()
     print("\nSeed complete!")

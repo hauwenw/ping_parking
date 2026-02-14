@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.router import api_router, root_router
 from app.config import settings
-from app.utils.errors import BusinessError, NotFoundError
+from app.utils.errors import BusinessError, DuplicateError, NotFoundError
 
 app = FastAPI(
     title=settings.app_name,
@@ -28,6 +28,16 @@ app.add_middleware(
 async def not_found_handler(request: Request, exc: NotFoundError) -> JSONResponse:
     return JSONResponse(
         status_code=404,
+        content={"code": exc.code, "message": exc.message},
+    )
+
+
+@app.exception_handler(DuplicateError)
+async def duplicate_error_handler(
+    request: Request, exc: DuplicateError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=409,
         content={"code": exc.code, "message": exc.message},
     )
 

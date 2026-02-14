@@ -1,6 +1,16 @@
 from fastapi import APIRouter
 
-from app.api import agreements, auth, customers, health, payments, sites, spaces, tags
+from app.api import (
+    agreements,
+    auth,
+    customers,
+    health,
+    payments,
+    sites,
+    spaces,
+    system_logs,
+    tags,
+)
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(auth.router)
@@ -10,6 +20,7 @@ api_router.include_router(spaces.router)
 api_router.include_router(customers.router)
 api_router.include_router(agreements.router)
 api_router.include_router(payments.router)
+api_router.include_router(system_logs.router)
 
 # Include health at root level (no /api/v1 prefix)
 root_router = APIRouter()

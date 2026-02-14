@@ -38,7 +38,7 @@ def _to_response(a) -> AgreementResponse:
     try:
         plates = decrypt_license_plate(a.license_plates)
     except Exception:
-        plates = a.license_plates  # Fallback for unencrypted data
+        plates = "[已加密]"  # Never expose raw ciphertext
 
     return AgreementResponse(
         id=a.id,

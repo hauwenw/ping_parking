@@ -14,7 +14,7 @@ Ping Parking Management System - A web-based platform for managing Wu family par
 
 ### Backend (FastAPI)
 ```bash
-cd ping-parking-api
+cd backend
 pip install -r requirements.txt
 uvicorn app.main:app --reload    # Start dev server at http://localhost:8000
 pytest                           # Run test suite
@@ -24,6 +24,7 @@ alembic revision --autogenerate -m "description"  # Create migration
 
 ### Frontend (Next.js)
 ```bash
+cd frontend
 npm install
 npm run dev              # Start development server at http://localhost:3000
 npm run build            # Production build
@@ -244,4 +245,4 @@ Focus testing on:
 
 ## Project Status
 
-Currently in initial planning phase (Week 0). Codebase not yet implemented. Reference `init_draft.md` for complete product specification including timeline, workflows, and UI mockups.
+MVP feature-complete (M0-M4). Backend: FastAPI with 70 tests, 6 domains (sites, tags, spaces, customers, agreements, payments), audit logging, JWT auth. Frontend: Next.js with 11 routes, CRUD pages, detail pages, cross-navigation. Remaining: M5 (deployment config, seed data, production testing).

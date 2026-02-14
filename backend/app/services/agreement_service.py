@@ -13,7 +13,7 @@ from app.models.payment import Payment
 from app.models.space import Space
 from app.schemas.agreement import AgreementCreate, AgreementTerminate
 from app.services.audit_logger import AuditLogger
-from app.utils.crypto import decrypt_license_plate, encrypt_license_plate
+from app.utils.crypto import encrypt_license_plate, mask_license_plate
 from app.utils.errors import BusinessError, DoubleBookingError, NotFoundError
 
 
@@ -140,7 +140,7 @@ class AgreementService:
                 "start_date": str(data.start_date),
                 "end_date": str(end_date),
                 "price": data.price,
-                "license_plates": data.license_plates,
+                "license_plates": mask_license_plate(data.license_plates),
             },
             user=self.user,
             ip_address=self.ip,

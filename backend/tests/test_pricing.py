@@ -160,3 +160,42 @@ async def test_filter_spaces_by_tag(
     assert resp.status_code == 200
     data = resp.json()
     assert all("VIP" in s["tags"] for s in data)
+
+
+@pytest.mark.asyncio
+async def test_multiple_priced_tags_first_wins(
+    auth_client: AsyncClient, site_with_pricing: str, tag_with_pricing: dict
+) -> None:
+    """When space has multiple priced tags, the first priced tag wins."""
+    # Create a second priced tag
+    await auth_client.post(
+        "/api/v1/tags",
+        json={"name": "Premium", "color": "#0000FF", "monthly_price": 8000, "daily_price": 300},
+    )
+    # VIP appears first in the tags array → VIP pricing should win
+    resp = await auth_client.post(
+        "/api/v1/spaces",
+        json={"site_id": site_with_pricing, "name": "M-01", "tags": ["VIP", "Premium"]},
+    )
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["effective_monthly_price"] == 5000
+    assert data["effective_daily_price"] == 200
+    assert data["price_tier"] == "tag"
+    assert data["price_tag_name"] == "VIP"
+
+
+@pytest.mark.asyncio
+async def test_multiple_tags_second_priced_wins(
+    auth_client: AsyncClient, site_with_pricing: str, tag_no_pricing: dict, tag_with_pricing: dict
+) -> None:
+    """When first tag has no price, the second priced tag is used."""
+    resp = await auth_client.post(
+        "/api/v1/spaces",
+        json={"site_id": site_with_pricing, "name": "M-02", "tags": ["有屋頂", "VIP"]},
+    )
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["effective_monthly_price"] == 5000
+    assert data["price_tier"] == "tag"
+    assert data["price_tag_name"] == "VIP"

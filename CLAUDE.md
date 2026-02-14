@@ -6,33 +6,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Ping Parking Management System - A web-based platform for managing Wu family parking operations in Pingtung City, Taiwan. Manages 3 parking lots with ~100 spaces supporting daily, monthly, quarterly, and yearly rental agreements.
 
-**Tech Stack**: Next.js 14 (TypeScript), Supabase (PostgreSQL), Tailwind CSS + shadcn/ui, Vercel hosting
+**Tech Stack**: FastAPI (Python) + Supabase (DB-only PostgreSQL) + Next.js 14 (TypeScript) + Tailwind CSS + shadcn/ui
 
 **Language**: Traditional Chinese (Taiwan) with TWD currency formatting
 
 ## Development Commands
 
-### Initial Setup
+### Backend (FastAPI)
+```bash
+cd ping-parking-api
+pip install -r requirements.txt
+uvicorn app.main:app --reload    # Start dev server at http://localhost:8000
+pytest                           # Run test suite
+alembic upgrade head             # Run database migrations
+alembic revision --autogenerate -m "description"  # Create migration
+```
+
+### Frontend (Next.js)
 ```bash
 npm install
 npm run dev              # Start development server at http://localhost:3000
+npm run build            # Production build
+npm run lint             # Run ESLint
+npm run type-check       # TypeScript type checking
+npm test                 # Run test suite
+npm test -- <file>       # Run single test file
 ```
 
-### Common Development Tasks
+### Database (Supabase — DB-only)
 ```bash
-npm run build           # Production build
-npm run lint            # Run ESLint
-npm run type-check      # TypeScript type checking
-npm test                # Run test suite
-npm test -- <file>      # Run single test file
-```
-
-### Database Operations
-```bash
-npx supabase start      # Start local Supabase instance
-npx supabase db reset   # Reset database with migrations
-npx supabase migration new <name>  # Create new migration
-npx supabase db push    # Push migrations to remote
+# Connection via DATABASE_URL environment variable
+# Migrations managed by Alembic (see Backend commands above)
 ```
 
 ## Documentation and Technical References
@@ -47,6 +51,30 @@ When you need to check technical specifications, API documentation, or implement
 - TypeScript best practices
 
 This ensures you're working with current, accurate technical specifications rather than relying on potentially outdated information.
+
+## Key Project Documentation
+
+### Planning & Architecture
+- `docs/specs/tech-stack-plan.md` — Tech stack decision, architecture diagram, project structure, cost breakdown
+- `docs/specs/milestone-plan.md` — 6-milestone implementation plan (M0-M5), 34 stories, ~116 hours
+- `docs/specs/mvp-scope.md` — MVP scope definition, story assignments, sprint plan
+
+### Coding Conventions
+- `docs/specs/coding-conventions-python.md` — Python/FastAPI backend: project structure, naming, Pydantic schemas, SQLAlchemy models, service layer, error handling, testing
+- `docs/specs/coding-conventions-frontend.md` — JS/Next.js frontend: App Router structure, TypeScript, components, data fetching, Tailwind styling, forms, localization
+
+### User Stories by Domain
+- `docs/specs/user-stories/README.md` — User stories index (all 34 stories)
+- `docs/specs/user-stories/01-space/README.md` — Space Management (SPACE-001 to SPACE-006)
+- `docs/specs/user-stories/02-customer/README.md` — Customer Management (CUST-001 to CUST-005)
+- `docs/specs/user-stories/03-agreement/README.md` — Agreement Management (AGREE-001 to AGREE-009)
+- `docs/specs/user-stories/04-payment/README.md` — Payment Management (PAY-001 to PAY-003)
+- `docs/specs/user-stories/06-system-audit/README.md` — System Audit (AUDIT-001 to AUDIT-003)
+- `docs/specs/user-stories/10-localization/README.md` — Localization (LOC-001 to LOC-004)
+- `docs/specs/user-stories/12-security/README.md` — Security (SEC-001 to SEC-006)
+
+### Original Specification
+- `init_draft.md` — Complete product specification, workflows, UI mockups
 
 ## Architecture Overview
 
@@ -68,14 +96,14 @@ This ensures you're working with current, accurate technical specifications rath
 **Important**:
 - Each space can have ONLY ONE active agreement at a time
 - Spaces use PostgreSQL array type for tags (e.g., `tags: ['有屋頂', 'VIP']`)
-- All tables must have Row Level Security (RLS) enabled
+- Access control enforced in FastAPI auth middleware (no RLS — single DB user)
 
 ### Frontend Structure
 
 **Navigation Hierarchy** (MVP):
 1. 停車場管理 (Site/Space Management) - Table view with tag/status filters
 2. 客戶管理 (Customer Management) - Customer list with active agreement counts
-3. 合約管理 (Agreement Management) - Agreement list with payment status, cross-page navigation
+3. 合約管理 (Agreement Management) - Agreement list with payment status, cross-page navigation (**default landing page after login**)
 4. 系統設定 (System Settings) - Tag configuration, site settings, admin settings
 5. 系統紀錄 (Audit Log) - Activity log viewer with export
 
@@ -135,7 +163,7 @@ All admin actions must be logged to `system_logs` with:
 - `old_values` and `new_values` as JSONB for complete audit trail
 - `user_id`, `ip_address`, `timestamp`
 
-Implement using Supabase database triggers or middleware, NOT client-side logging.
+Implement using application-layer AuditLogger service in FastAPI, NOT client-side logging or database triggers.
 
 ## Critical Business Rules
 
@@ -183,9 +211,9 @@ All UI text, validation messages, and notifications must use Traditional Chinese
 ## Security Considerations
 
 1. **Privacy Compliance**: Never store national ID numbers
-2. **RLS Enforcement**: All Supabase tables require Row Level Security policies
-3. **Authentication**: Use Supabase Auth with JWT tokens
-4. **Audit Trail**: Complete logging for all write operations
+2. **Access Control**: FastAPI auth middleware on all endpoints (no RLS — single DB user)
+3. **Authentication**: Self-managed JWT in FastAPI middleware (no Supabase Auth)
+4. **Audit Trail**: Application-layer AuditLogger service for all write operations
 5. **License Plate Privacy**: Encrypt in transit, mask in public views
 
 ## Testing Strategy
@@ -196,7 +224,7 @@ Focus testing on:
 - Tag filtering with array operators
 - CSV import validation and error handling
 - Cross-page navigation data integrity
-- RLS policy enforcement
+- FastAPI auth middleware enforcement
 
 ## Common Pitfalls
 
@@ -208,11 +236,11 @@ Focus testing on:
 
 ## Deployment Notes
 
-- **Environment**: Vercel (Next.js deployment)
-- **Database**: Supabase cloud PostgreSQL
-- **Target Cost**: <$50/month (Vercel Pro $20 + SMS $10-30)
+- **Backend**: Fly.io Hong Kong region (Docker, $3-5/mo)
+- **Frontend**: Vercel Free (Next.js)
+- **Database**: Supabase free PostgreSQL (DB-only, no Auth/RLS/PostgREST)
+- **Target Cost**: $4-6/month
 - **Monitoring**: Vercel analytics + Supabase dashboard
-- **Target Uptime**: 99.9%
 
 ## Project Status
 

@@ -25,9 +25,9 @@ So that we have a complete, immutable audit trail without relying on manual logg
 
 ## Business Rules
 
-- Immutability: Logs cannot be updated/deleted (trigger + RLS enforced)
+- Immutability: Logs cannot be updated/deleted (enforced via FastAPI middleware + DB trigger)
 - Async Logging: Avoid blocking user operations
-- Server-Side Only: Database triggers or API middleware (not client)
+- Server-Side Only: FastAPI AuditLogger service (not client)
 - Sensitive Data: Do NOT log passwords, JWT tokens
 - Complete Capture: Log both old and new values for UPDATE
 
@@ -51,5 +51,5 @@ So that we have a complete, immutable audit trail without relying on manual logg
 ## Related Stories
 
 - US-AUDIT-001 (view logs)
-- US-SEC-005 (RLS on system_logs)
+- Access control in FastAPI auth middleware
 - US-BULK-001 through US-BULK-006 (CSV logging)

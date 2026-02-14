@@ -1,7 +1,9 @@
 # US-SEC-005: Row Level Security (RLS) Enforcement
 
-**Priority**: Must Have
-**Phase**: Phase 1
+> **Status: DROPPED from MVP** — Access control handled entirely in FastAPI auth middleware. Single DB user connection makes RLS redundant. Revisit if public-facing API added in Phase 2.
+
+**Priority**: ~~Must Have~~ Dropped
+**Phase**: ~~Phase 1~~ Deferred to Phase 2
 **Domain**: Security & Authentication
 **Epic**: Data Security
 **Sprint**: Sprint 4 (Weeks 7-8)

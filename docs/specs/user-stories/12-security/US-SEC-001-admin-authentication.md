@@ -1,4 +1,4 @@
-# US-SEC-001: Admin Authentication with Supabase Auth
+# US-SEC-001: Admin Authentication (JWT)
 
 **Priority**: Must Have
 **Phase**: Phase 1
@@ -9,12 +9,12 @@
 ## User Story
 
 As a parking lot admin,
-I want to securely log in to the system using Supabase Auth,
+I want to securely log in to the system using email and password,
 So that only authorized users can access and manage parking lot data.
 
 ## Acceptance Criteria
 
-- **AC1**: Given an admin user with valid credentials, when they submit the login form with email and password, then Supabase Auth validates credentials and issues a JWT token
+- **AC1**: Given an admin user with valid credentials, when they submit the login form with email and password, then FastAPI validates credentials against admin_users table and issues a JWT token
 - **AC2**: Given a successful login, when the JWT token is issued, then the system stores the token securely in HttpOnly cookies (not localStorage)
 - **AC3**: Given an invalid email or password, when admin submits login form, then system shows error in Traditional Chinese: "電子郵件或密碼錯誤，請重試"
 - **AC4**: Given a logged-in admin, when they navigate to any protected route, then system validates JWT token before allowing access
@@ -23,7 +23,7 @@ So that only authorized users can access and manage parking lot data.
 
 ## Business Rules
 
-- Admin accounts created via Supabase Auth dashboard (no self-registration). Each family member should have their own account for audit trail accountability.
+- Admin accounts created via seed script or admin CLI (no self-registration). Each family member should have their own account for audit trail accountability.
 - Minimum password strength: 8 characters, mix of letters and numbers
 - Session timeout: 24 hours of inactivity
 - Failed login lockout: 5 failed attempts = 15-minute account lockout
@@ -38,7 +38,7 @@ So that only authorized users can access and manage parking lot data.
   - "登入" (Login) button (primary CTA)
 - **Validation**: Inline validation with Traditional Chinese error messages
 - **Loading State**: Button shows loading spinner during authentication
-- **Success**: Redirect to dashboard (儀表板) on successful login
+- **Success**: Redirect to `/admin/agreements` (合約管理) on successful login. Phase 2: change to Dashboard (儀表板) when implemented.
 
 ## Source
 
@@ -46,7 +46,7 @@ So that only authorized users can access and manage parking lot data.
 
 ## Dependencies
 
-- Supabase Auth setup
+- admin_users table, JWT middleware
 
 ## Test Data
 

@@ -119,7 +119,7 @@ US-FLOW-001: Complete space allocation workflow
 US-UI-001: View dashboard with tag-based statistics
 US-LOC-002: Display phone numbers in Taiwan format
 US-RPT-001: Generate occupancy dashboard report
-US-SEC-001: Admin authentication with Supabase Auth
+US-SEC-001: Admin authentication with JWT
 ```
 
 ## MoSCoW Prioritization

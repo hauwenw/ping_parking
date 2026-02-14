@@ -24,7 +24,7 @@ So that I can track who changed what data and when for accountability and troubl
 
 ## Business Rules
 
-- Read-Only: Audit logs cannot be edited or deleted (RLS enforced)
+- Read-Only: Audit logs cannot be edited or deleted (enforced via application middleware + DB trigger)
 - Retention: All logs retained indefinitely (min 3 years)
 - Performance: Optimized for millions of records
 - Privacy: Mask sensitive data in values

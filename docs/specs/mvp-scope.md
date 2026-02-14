@@ -88,10 +88,10 @@
 | US-SEC-002 | Session Management | Sprint 1 |
 | US-SEC-003 | Role-Based Access | Sprint 2 |
 | US-SEC-004 | Privacy-Compliant Data | Sprint 2 |
-| US-SEC-005 | RLS Enforcement | Sprint 1 |
+| US-SEC-005 | ~~RLS Enforcement~~ | **Dropped** |
 | US-SEC-006 | License Plate Encryption | Sprint 2 |
 
-**Covers**: Supabase Auth with JWT, per-person admin accounts, concurrent sessions allowed, RLS on all tables, no national ID storage, license plate masking.
+**Covers**: Self-managed JWT in FastAPI, per-person admin accounts, concurrent sessions allowed, access control in FastAPI middleware (RLS dropped), no national ID storage, license plate masking.
 
 ## Out of Scope (Phase 2)
 

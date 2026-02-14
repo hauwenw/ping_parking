@@ -26,7 +26,7 @@ So that public users cannot modify critical business data.
 - Admin routes: All pages under `/admin/*` (dashboard, customers, agreements, etc.)
 - Public routes: `/login`, `/availability` (future customer self-service portal)
 - API endpoints: All mutations (create/update/delete) require admin role
-- RLS policies: Supabase Row Level Security enforces role checks at database level
+- FastAPI middleware enforces role checks at API level (no RLS — single DB user)
 
 ## UI Requirements
 

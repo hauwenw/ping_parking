@@ -25,6 +25,10 @@ export interface Space {
   tags: string[];
   custom_price: number | null;
   site_name: string | null;
+  effective_monthly_price: number | null;
+  effective_daily_price: number | null;
+  price_tier: "site" | "tag" | "custom" | null;
+  price_tag_name: string | null;
 }
 
 export interface Customer {

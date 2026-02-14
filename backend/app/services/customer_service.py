@@ -18,10 +18,20 @@ class CustomerService:
         self.ip = ip
         self.audit = AuditLogger(db)
 
-    async def list(self) -> list[Customer]:
-        result = await self.db.execute(
-            select(Customer).order_by(Customer.name)
-        )
+    async def list(
+        self,
+        search: str | None = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[Customer]:
+        stmt = select(Customer)
+        if search:
+            pattern = f"%{search}%"
+            stmt = stmt.where(
+                Customer.name.ilike(pattern) | Customer.phone.ilike(pattern)
+            )
+        stmt = stmt.order_by(Customer.name).offset(offset).limit(limit)
+        result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
     async def get(self, customer_id: UUID) -> Customer:

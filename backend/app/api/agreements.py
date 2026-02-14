@@ -11,6 +11,7 @@ from app.schemas.agreement import (
 from app.schemas.payment import PaymentResponse
 from app.services.agreement_service import AgreementService
 from app.services.payment_service import PaymentService
+from app.utils.crypto import decrypt_license_plate
 
 router = APIRouter(prefix="/agreements", tags=["agreements"])
 
@@ -20,6 +21,12 @@ def _get_ip(request: Request) -> str | None:
 
 
 def _to_response(a) -> AgreementResponse:
+    # Decrypt license plates for display
+    try:
+        plates = decrypt_license_plate(a.license_plates)
+    except Exception:
+        plates = a.license_plates  # Fallback for unencrypted data
+
     return AgreementResponse(
         id=a.id,
         customer_id=a.customer_id,
@@ -28,7 +35,7 @@ def _to_response(a) -> AgreementResponse:
         start_date=a.start_date,
         end_date=a.end_date,
         price=a.price,
-        license_plates=a.license_plates,
+        license_plates=plates,
         notes=a.notes,
         terminated_at=str(a.terminated_at) if a.terminated_at else None,
         termination_reason=a.termination_reason,

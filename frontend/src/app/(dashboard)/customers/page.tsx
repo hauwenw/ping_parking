@@ -24,18 +24,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
+  const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
-    const data = await api.get<Customer[]>("/api/v1/customers");
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    const data = await api.get<Customer[]>(`/api/v1/customers?${params.toString()}`);
     setCustomers(data);
     setLoading(false);
-  }, []);
+  }, [search]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -122,6 +126,16 @@ export default function CustomersPage() {
         </Dialog>
       </div>
 
+      {/* Search bar */}
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="搜尋姓名或電話..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+
       {loading ? (
         <p className="text-muted-foreground">載入中...</p>
       ) : (
@@ -146,7 +160,9 @@ export default function CustomersPage() {
                   <TableCell>{c.email || "-"}</TableCell>
                   <TableCell>
                     {c.active_agreement_count > 0 ? (
-                      <Badge>{c.active_agreement_count}</Badge>
+                      <Link href={`/agreements?customer_id=${c.id}`}>
+                        <Badge className="cursor-pointer">{c.active_agreement_count}</Badge>
+                      </Link>
                     ) : (
                       <span className="text-muted-foreground">0</span>
                     )}

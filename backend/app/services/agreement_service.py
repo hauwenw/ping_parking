@@ -13,6 +13,7 @@ from app.models.payment import Payment
 from app.models.space import Space
 from app.schemas.agreement import AgreementCreate, AgreementTerminate
 from app.services.audit_logger import AuditLogger
+from app.utils.crypto import decrypt_license_plate, encrypt_license_plate
 from app.utils.errors import BusinessError, DoubleBookingError, NotFoundError
 
 
@@ -102,6 +103,8 @@ class AgreementService:
 
         end_date = _calc_end_date(data.start_date, data.agreement_type)
 
+        encrypted_plates = encrypt_license_plate(data.license_plates)
+
         agreement = Agreement(
             customer_id=data.customer_id,
             space_id=data.space_id,
@@ -109,7 +112,7 @@ class AgreementService:
             start_date=data.start_date,
             end_date=end_date,
             price=data.price,
-            license_plates=data.license_plates,
+            license_plates=encrypted_plates,
             notes=data.notes,
         )
         self.db.add(agreement)

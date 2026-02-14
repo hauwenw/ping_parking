@@ -4,6 +4,7 @@ from fastapi import APIRouter, Query, Request
 
 from app.dependencies import CurrentUser, DbSession
 from app.models.space import Space
+from app.models.tag import Tag
 from app.schemas.space import SpaceCreate, SpaceResponse, SpaceUpdate
 from app.services.space_service import SpaceService
 
@@ -14,8 +15,8 @@ def _get_ip(request: Request) -> str | None:
     return request.client.host if request.client else None
 
 
-def _to_response(s: Space) -> SpaceResponse:
-    return SpaceResponse(
+def _to_response(s: Space, all_tags: list[Tag] | None = None, svc: SpaceService | None = None) -> SpaceResponse:
+    resp = SpaceResponse(
         id=s.id,
         site_id=s.site_id,
         name=s.name,
@@ -24,6 +25,13 @@ def _to_response(s: Space) -> SpaceResponse:
         custom_price=s.custom_price,
         site_name=s.site.name if s.site else None,
     )
+    if svc and all_tags is not None:
+        pricing = svc.compute_pricing(s, all_tags)
+        resp.effective_monthly_price = pricing["monthly"]
+        resp.effective_daily_price = pricing["daily"]
+        resp.price_tier = pricing["tier"]
+        resp.price_tag_name = pricing.get("tag_name")
+    return resp
 
 
 @router.get("", response_model=list[SpaceResponse])
@@ -31,10 +39,15 @@ async def list_spaces(
     db: DbSession,
     current_user: CurrentUser,
     site_id: UUID | None = Query(None),
+    status: str | None = Query(None),
+    tag: str | None = Query(None),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
 ) -> list[SpaceResponse]:
     svc = SpaceService(db, current_user)
-    spaces = await svc.list(site_id=site_id)
-    return [_to_response(s) for s in spaces]
+    spaces = await svc.list(site_id=site_id, status=status, tag=tag, offset=offset, limit=limit)
+    all_tags = await svc.get_all_tags()
+    return [_to_response(s, all_tags, svc) for s in spaces]
 
 
 @router.get("/{space_id}", response_model=SpaceResponse)
@@ -43,7 +56,8 @@ async def get_space(
 ) -> SpaceResponse:
     svc = SpaceService(db, current_user)
     space = await svc.get(space_id)
-    return _to_response(space)
+    all_tags = await svc.get_all_tags()
+    return _to_response(space, all_tags, svc)
 
 
 @router.post("", response_model=SpaceResponse, status_code=201)
@@ -57,7 +71,8 @@ async def create_space(
     space = await svc.create(data)
     # Re-fetch with site relationship loaded
     space = await svc.get(space.id)
-    return _to_response(space)
+    all_tags = await svc.get_all_tags()
+    return _to_response(space, all_tags, svc)
 
 
 @router.put("/{space_id}", response_model=SpaceResponse)
@@ -72,7 +87,8 @@ async def update_space(
     space = await svc.update(space_id, data)
     # Re-fetch with site relationship loaded
     space = await svc.get(space.id)
-    return _to_response(space)
+    all_tags = await svc.get_all_tags()
+    return _to_response(space, all_tags, svc)
 
 
 @router.delete("/{space_id}", status_code=204)

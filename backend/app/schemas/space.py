@@ -25,5 +25,10 @@ class SpaceResponse(BaseModel):
     tags: list[str]
     custom_price: int | None
     site_name: str | None = None
+    # Computed pricing fields
+    effective_monthly_price: int | None = None
+    effective_daily_price: int | None = None
+    price_tier: str | None = None  # "site", "tag", "custom"
+    price_tag_name: str | None = None
 
     model_config = {"from_attributes": True}

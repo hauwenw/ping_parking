@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Query, Request
 
 from app.dependencies import CurrentUser, DbSession
 from app.schemas.customer import CustomerCreate, CustomerResponse, CustomerUpdate
@@ -15,10 +15,14 @@ def _get_ip(request: Request) -> str | None:
 
 @router.get("", response_model=list[CustomerResponse])
 async def list_customers(
-    db: DbSession, current_user: CurrentUser
+    db: DbSession,
+    current_user: CurrentUser,
+    search: str | None = Query(None),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
 ) -> list[CustomerResponse]:
     svc = CustomerService(db, current_user)
-    customers = await svc.list()
+    customers = await svc.list(search=search, offset=offset, limit=limit)
     results = []
     for c in customers:
         count = await svc.get_active_agreement_count(c.id)

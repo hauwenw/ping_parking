@@ -68,6 +68,13 @@ export interface Payment {
   notes: string | null;
 }
 
+export interface AgreementSummary {
+  active_count: number;
+  pending_payment_total: number;
+  available_space_count: number;
+  overdue_count: number;
+}
+
 export interface SystemLog {
   id: string;
   user_id: string | null;

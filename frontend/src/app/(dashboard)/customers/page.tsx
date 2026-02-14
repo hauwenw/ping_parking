@@ -154,7 +154,14 @@ export default function CustomersPage() {
             <TableBody>
               {customers.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.name}</TableCell>
+                  <TableCell>
+                    <Link
+                      href={`/customers/${c.id}`}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {c.name}
+                    </Link>
+                  </TableCell>
                   <TableCell>{formatPhone(c.phone)}</TableCell>
                   <TableCell>{c.contact_phone ? formatPhone(c.contact_phone) : "-"}</TableCell>
                   <TableCell>{c.email || "-"}</TableCell>

@@ -2,7 +2,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
 
+from pydantic import BaseModel
+from sqlalchemy import func, select
+
 from app.dependencies import CurrentUser, DbSession
+from app.models.agreement import Agreement
+from app.models.payment import Payment
+from app.models.space import Space
 from app.schemas.agreement import (
     AgreementCreate,
     AgreementResponse,
@@ -12,6 +18,13 @@ from app.schemas.payment import PaymentResponse
 from app.services.agreement_service import AgreementService
 from app.services.payment_service import PaymentService
 from app.utils.crypto import decrypt_license_plate
+
+
+class AgreementSummary(BaseModel):
+    active_count: int
+    pending_payment_total: int
+    available_space_count: int
+    overdue_count: int
 
 router = APIRouter(prefix="/agreements", tags=["agreements"])
 
@@ -58,6 +71,57 @@ async def list_agreements(
         customer_id=customer_id, space_id=space_id, active_only=active_only
     )
     return [_to_response(a) for a in agreements]
+
+
+@router.get("/summary", response_model=AgreementSummary)
+async def get_agreement_summary(
+    db: DbSession, current_user: CurrentUser
+) -> AgreementSummary:
+    from datetime import date as date_type
+
+    # Active agreements count
+    active_result = await db.execute(
+        select(func.count()).select_from(Agreement).where(
+            Agreement.terminated_at.is_(None)
+        )
+    )
+    active_count = active_result.scalar_one()
+
+    # Pending payment total
+    pending_result = await db.execute(
+        select(func.coalesce(func.sum(Payment.amount), 0)).where(
+            Payment.status == "pending"
+        )
+    )
+    pending_payment_total = pending_result.scalar_one()
+
+    # Available spaces
+    available_result = await db.execute(
+        select(func.count()).select_from(Space).where(
+            Space.status == "available"
+        )
+    )
+    available_space_count = available_result.scalar_one()
+
+    # Overdue: active agreements past end_date with pending payment
+    today = date_type.today()
+    overdue_result = await db.execute(
+        select(func.count()).select_from(Agreement).join(
+            Payment, Payment.agreement_id == Agreement.id
+        ).where(
+            Agreement.terminated_at.is_(None),
+            Agreement.end_date < today,
+            Payment.status == "pending",
+        )
+    )
+    overdue_count = overdue_result.scalar_one()
+
+    return AgreementSummary(
+        active_count=active_count,
+        pending_payment_total=pending_payment_total,
+        available_space_count=available_space_count,
+        overdue_count=overdue_count,
+    )
 
 
 @router.get("/{agreement_id}", response_model=AgreementResponse)

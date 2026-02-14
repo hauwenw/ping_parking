@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
-import type { Agreement, Customer, Space } from "@/lib/types";
+import type { Agreement, AgreementSummary, Customer, Space } from "@/lib/types";
 import { formatCurrency, formatDate, agreementTypeLabel, paymentStatusLabel } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -40,6 +42,7 @@ export default function AgreementsPage() {
   const [agreements, setAgreements] = useState<Agreement[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [spaces, setSpaces] = useState<Space[]>([]);
+  const [summary, setSummary] = useState<AgreementSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [terminateId, setTerminateId] = useState<string | null>(null);
@@ -48,14 +51,16 @@ export default function AgreementsPage() {
     const params = new URLSearchParams();
     if (customerIdParam) params.set("customer_id", customerIdParam);
 
-    const [agreementsData, customersData, spacesData] = await Promise.all([
+    const [agreementsData, customersData, spacesData, summaryData] = await Promise.all([
       api.get<Agreement[]>(`/api/v1/agreements?${params.toString()}`),
       api.get<Customer[]>("/api/v1/customers"),
       api.get<Space[]>("/api/v1/spaces?status=available"),
+      api.get<AgreementSummary>("/api/v1/agreements/summary"),
     ]);
     setAgreements(agreementsData);
     setCustomers(customersData);
     setSpaces(spacesData);
+    setSummary(summaryData);
     setLoading(false);
   }, [customerIdParam]);
 
@@ -177,6 +182,44 @@ export default function AgreementsPage() {
         </Dialog>
       </div>
 
+      {/* Summary cards */}
+      {summary && (
+        <div className="grid grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">有效合約</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{summary.active_count} <span className="text-sm font-normal text-muted-foreground">筆</span></p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">待收繳費 (未付)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{formatCurrency(summary.pending_payment_total)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">可用車位</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{summary.available_space_count} <span className="text-sm font-normal text-muted-foreground">個</span></p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">逾期</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{summary.overdue_count} <span className="text-sm font-normal text-muted-foreground">筆</span></p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-muted-foreground">載入中...</p>
       ) : agreements.length === 0 ? (
@@ -201,8 +244,16 @@ export default function AgreementsPage() {
             <TableBody>
               {agreements.map((a) => (
                 <TableRow key={a.id}>
-                  <TableCell className="font-medium">{a.customer_name}</TableCell>
-                  <TableCell>{a.space_name}</TableCell>
+                  <TableCell>
+                    <Link href={`/customers/${a.customer_id}`} className="font-medium text-primary hover:underline">
+                      {a.customer_name}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <Link href={`/agreements/${a.id}`} className="hover:underline">
+                      {a.space_name}
+                    </Link>
+                  </TableCell>
                   <TableCell>{agreementTypeLabel(a.agreement_type)}</TableCell>
                   <TableCell>{formatDate(a.start_date)}</TableCell>
                   <TableCell>{formatDate(a.end_date)}</TableCell>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { SystemLog } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -35,7 +36,28 @@ export default function SystemLogsPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">系統紀錄</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">系統紀錄</h2>
+        <Button
+          variant="outline"
+          onClick={async () => {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+            const token = api.getToken();
+            const res = await fetch(`${API_URL}/api/v1/system-logs/export?limit=1000`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "system_logs.csv";
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+        >
+          匯出 CSV
+        </Button>
+      </div>
 
       {loading ? (
         <p className="text-muted-foreground">載入中...</p>

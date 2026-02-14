@@ -1,12 +1,14 @@
+import csv
+import io
 from uuid import UUID
 
 from fastapi import APIRouter, Query
+from fastapi.responses import StreamingResponse
+from sqlalchemy import select
 
 from app.dependencies import CurrentUser, DbSession
 from app.models.system_log import SystemLog
 from app.schemas.system_log import SystemLogResponse
-
-from sqlalchemy import select
 
 router = APIRouter(prefix="/system-logs", tags=["system-logs"])
 
@@ -35,6 +37,45 @@ async def list_system_logs(
     result = await db.execute(stmt)
     logs = result.scalars().all()
     return [SystemLogResponse.model_validate(log) for log in logs]
+
+
+@router.get("/export", response_class=StreamingResponse)
+async def export_system_logs(
+    db: DbSession,
+    current_user: CurrentUser,
+    action: str | None = Query(None),
+    table_name: str | None = Query(None),
+    limit: int = Query(1000, ge=1, le=10000),
+) -> StreamingResponse:
+    stmt = select(SystemLog)
+    if action:
+        stmt = stmt.where(SystemLog.action == action)
+    if table_name:
+        stmt = stmt.where(SystemLog.table_name == table_name)
+    stmt = stmt.order_by(SystemLog.created_at.desc()).limit(limit)
+    result = await db.execute(stmt)
+    logs = result.scalars().all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["時間", "操作", "資料表", "紀錄ID", "IP", "舊值", "新值"])
+    for log in logs:
+        writer.writerow([
+            str(log.created_at),
+            log.action,
+            log.table_name or "",
+            str(log.record_id) if log.record_id else "",
+            log.ip_address or "",
+            str(log.old_values) if log.old_values else "",
+            str(log.new_values) if log.new_values else "",
+        ])
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=system_logs.csv"},
+    )
 
 
 @router.get("/{log_id}", response_model=SystemLogResponse)

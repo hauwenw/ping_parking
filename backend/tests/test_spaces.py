@@ -86,3 +86,52 @@ async def test_invalid_status_value(auth_client: AsyncClient, site_id: str) -> N
         json={"status": "invalid_status"},
     )
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_duplicate_name_same_site(auth_client: AsyncClient, site_id: str) -> None:
+    """Creating a space with a duplicate name in the same site should return 409."""
+    await auth_client.post(
+        "/api/v1/spaces", json={"site_id": site_id, "name": "DUP-01"}
+    )
+    response = await auth_client.post(
+        "/api/v1/spaces", json={"site_id": site_id, "name": "DUP-01"}
+    )
+    assert response.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_create_same_name_different_site(auth_client: AsyncClient, site_id: str) -> None:
+    """Same space name in different sites should be allowed."""
+    # Create second site
+    site2_resp = await auth_client.post(
+        "/api/v1/sites",
+        json={"name": "另一場", "monthly_base_price": 3000, "daily_base_price": 120},
+    )
+    site2_id = site2_resp.json()["id"]
+
+    await auth_client.post(
+        "/api/v1/spaces", json={"site_id": site_id, "name": "CROSS-01"}
+    )
+    response = await auth_client.post(
+        "/api/v1/spaces", json={"site_id": site2_id, "name": "CROSS-01"}
+    )
+    assert response.status_code == 201
+
+
+@pytest.mark.asyncio
+async def test_rename_space_to_existing_name(auth_client: AsyncClient, site_id: str) -> None:
+    """Renaming a space to an existing name in the same site should return 409."""
+    await auth_client.post(
+        "/api/v1/spaces", json={"site_id": site_id, "name": "REN-01"}
+    )
+    create2 = await auth_client.post(
+        "/api/v1/spaces", json={"site_id": site_id, "name": "REN-02"}
+    )
+    space2_id = create2.json()["id"]
+
+    response = await auth_client.put(
+        f"/api/v1/spaces/{space2_id}",
+        json={"name": "REN-01"},
+    )
+    assert response.status_code == 409

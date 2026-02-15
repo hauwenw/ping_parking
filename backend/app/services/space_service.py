@@ -12,7 +12,7 @@ from app.models.space import Space
 from app.models.tag import Tag
 from app.schemas.space import SpaceCreate, SpaceUpdate
 from app.services.audit_logger import AuditLogger
-from app.utils.errors import BusinessError, NotFoundError
+from app.utils.errors import BusinessError, DuplicateError, NotFoundError
 from app.utils.pricing import compute_space_price
 
 
@@ -70,6 +70,14 @@ class SpaceService:
             raise NotFoundError("車位")
         return space
 
+    async def _check_name_unique(self, site_id, name, exclude_id=None) -> None:
+        stmt = select(Space).where(Space.site_id == site_id, Space.name == name)
+        if exclude_id:
+            stmt = stmt.where(Space.id != exclude_id)
+        result = await self.db.execute(stmt)
+        if result.scalar_one_or_none() is not None:
+            raise DuplicateError("車位", "名稱")
+
     async def create(self, data: SpaceCreate) -> Space:
         # Verify site exists
         site_result = await self.db.execute(
@@ -77,6 +85,8 @@ class SpaceService:
         )
         if site_result.scalar_one_or_none() is None:
             raise NotFoundError("停車場")
+
+        await self._check_name_unique(data.site_id, data.name)
 
         space = Space(**data.model_dump())
         self.db.add(space)
@@ -97,6 +107,10 @@ class SpaceService:
         update_data = data.model_dump(exclude_unset=True)
         if not update_data:
             return space
+
+        # Prevent renaming to an existing name in the same site
+        if "name" in update_data:
+            await self._check_name_unique(space.site_id, update_data["name"], exclude_id=space_id)
 
         # Prevent status change to available if active agreement exists
         if "status" in update_data and update_data["status"] == "available":

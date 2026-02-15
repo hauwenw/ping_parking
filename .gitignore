@@ -42,7 +42,3 @@ logs/
 *.temp
 .cache/
 
-# Gemini CLI Internal Files
-GEMINI.md
-bugs/
-pencil/

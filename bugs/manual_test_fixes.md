@@ -8,16 +8,35 @@ This document outlines the design and execution plan for the bugs and missing fe
 
 **Analysis:** The system currently allows the creation of spaces with duplicate names within the same site, which can lead to confusion and data integrity issues. The space name should be unique per site.
 
-**Execution Plan:**
+**Implementation Progress & Design Decisions:**
 
 *   **Backend (FastAPI):**
-    1.  **Database Layer:** Apply a unique composite constraint on the `spaces` table for the `(site_id, name)` columns using an Alembic migration. This will provide the ultimate data integrity guarantee.
-    2.  **Service Layer:** In the `SpaceService.create_space` method, before attempting to create the space, add a check to see if a space with the same name already exists for the given `site_id`.
-    3.  **API Layer:** If the check fails, raise an `HTTPException` with a `409 Conflict` status code and a clear error message in Chinese (e.g., "此場地已存在同名車位").
+    1.  **Database Layer (Done):** Implemented a unique composite constraint on the `spaces` table for the `(site_id, name)` columns.
+        *   **Decision:** Added `__table_args__ = (UniqueConstraint("site_id", "name", name="uq_spaces_site_id_name"),)` directly to the `Space` model (`backend/app/models/space.py`). This allows SQLAlchemy's `Base.metadata.create_all` (used in test setup) to pick up the constraint automatically.
+        *   **Decision:** Generated a new Alembic migration script (`1b7ea1249a8b_add_unique_constraint_to_space_name_and_.py`) that correctly includes `op.create_unique_constraint` and `op.drop_constraint`.
+    2.  **Service Layer (Done):** Modified `SpaceService.create` method (`backend/app/services/space_service.py`) to catch `sqlalchemy.exc.IntegrityError`.
+        *   **Decision:** If `IntegrityError` is due to the unique constraint violation on `spaces.site_id, spaces.name`, it now raises a `fastapi.HTTPException` with `status.HTTP_409_CONFLICT` and the Chinese detail message "此場地已存在同名車位". This ensures a proper API response for client-side handling.
+        *   **Debugging:** Initially used `BusinessError` which defaulted to 400; corrected to `HTTPException(status_code=status.HTTP_409_CONFLICT)`.
+    3.  **Testing (Done):**
+        *   Added `test_create_duplicate_space` to `backend/tests/test_spaces.py` to assert the `409 Conflict` behavior with the specific error message.
+        *   **Debugging `passlib/bcrypt`:** Encountered `ValueError: password cannot be longer than 72 bytes`. Resolved by downgrading `bcrypt` to `3.2.0` (compatible with `passlib==1.7.4` specified in `requirements.txt`) and updating test fixture passwords to "Pass123" in `backend/tests/conftest.py` and `backend/tests/test_auth.py`.
 
 *   **Frontend (Next.js):**
-    1.  **Error Handling:** In the "Create Space" form, update the API call logic to catch the `409 Conflict` error.
-    2.  **User Feedback:** When this error is caught, display a user-friendly error message next to the name input field, informing the user that the name is already taken.
+    1.  **Testing Setup (Done):** Configured Jest for unit/integration tests.
+        *   **Decision:** Installed `jest`, `@testing-library/react`, `@testing-library/jest-dom`, `ts-jest`, `jest-environment-jsdom`, `@types/jest`.
+        *   **Decision:** Added `test` and `test:watch` scripts to `frontend/package.json`.
+        *   **Decision:** Created `frontend/jest.config.js` with `ts-jest` preset, `jsdom` environment, and `moduleNameMapper`.
+        *   **Decision:** Created `frontend/jest.setup.ts` to import `@testing-library/jest-dom` and mock `Element.prototype.scrollIntoView` to address JSDOM compatibility for Radix UI components.
+    2.  **Failing Test (Done):** Created `frontend/src/app/(dashboard)/spaces/page.test.tsx`.
+        *   Simulates opening the space creation dialog, selecting a site, entering a duplicate space name, and submitting the form.
+        *   Mocks `api.post` to `mockRejectedValueOnce` with an `ApiError` instance containing the expected 409 status and error message.
+        *   **Debugging:** Initial test failures due to `TestingLibraryElementError: Found multiple elements with the text: Site A` and `Unable to find role="option" and name "Site A"` were resolved by using `screen.findByRole('button', { name: '新增車位' })` and `screen.findByRole('option', { name: 'Site A' })` to ensure elements are present and correctly targeted after asynchronous rendering. Also switched from `fireEvent.mouseDown` to `fireEvent.click` for `SelectTrigger`.
+        *   **Debugging `ApiError` Mocking:** The `instanceof ApiError` check in `page.tsx` was initially failing due to a mismatch between the mocked `ApiError` in `jest.mock('@/lib/api')` and the actual `ApiError` class.
+        *   **Decision:** Removed `jest.mock('@/lib/api')` and instead used `jest.spyOn(api, 'post')` on the actual `api` client. The `mockRejectedValueOnce` now throws an instance of the *actual* `ApiError` class (`new ApiError('message', 'code', status)`). This ensures the `instanceof` check passes.
+    3.  **Error Handling & Display (Done):** Modified `frontend/src/app/(dashboard)/spaces/page.tsx`'s `handleSubmit` function.
+        *   **Decision:** The existing `catch (err)` block with `if (err instanceof ApiError) toast.error(err.message);` is sufficient, as the backend now correctly returns a 409 with the appropriate message in `err.message`. The test now passes, confirming `toast.error` is called with "此場地已存在同名車位".
+
+**Next Steps:** Proceed with **Item 2: Batch Space Creation and Sequential Naming**. Currently, backend tests for this feature are failing with `405 Method Not Allowed`, indicating the endpoint is not yet implemented.
 
 ---
 

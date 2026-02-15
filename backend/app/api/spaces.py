@@ -5,7 +5,7 @@ from fastapi import APIRouter, Query, Request
 from app.dependencies import CurrentUser, DbSession
 from app.models.space import Space
 from app.models.tag import Tag
-from app.schemas.space import SpaceCreate, SpaceResponse, SpaceUpdate
+from app.schemas.space import SpaceBatchCreate, SpaceCreate, SpaceResponse, SpaceUpdate
 from app.services.space_service import SpaceService
 
 router = APIRouter(prefix="/spaces", tags=["spaces"])
@@ -48,6 +48,24 @@ async def list_spaces(
     spaces = await svc.list(site_id=site_id, status=status, tag=tag, offset=offset, limit=limit)
     all_tags = await svc.get_all_tags()
     return [_to_response(s, all_tags, svc) for s in spaces]
+
+
+@router.post("/batch", response_model=list[SpaceResponse], status_code=201)
+async def batch_create_spaces(
+    data: SpaceBatchCreate,
+    request: Request,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> list[SpaceResponse]:
+    svc = SpaceService(db, current_user, _get_ip(request))
+    spaces = await svc.batch_create(data)
+    # Re-fetch with site relationships loaded
+    all_tags = await svc.get_all_tags()
+    result = []
+    for space in spaces:
+        loaded = await svc.get(space.id)
+        result.append(_to_response(loaded, all_tags, svc))
+    return result
 
 
 @router.get("/{space_id}", response_model=SpaceResponse)

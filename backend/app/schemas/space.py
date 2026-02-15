@@ -10,6 +10,13 @@ class SpaceCreate(BaseModel):
     custom_price: int | None = Field(None, ge=0)
 
 
+class SpaceBatchCreate(BaseModel):
+    site_id: UUID
+    prefix: str = Field(..., min_length=1, max_length=20, pattern=r"^[A-Za-z0-9\u4e00-\u9fff]+$")
+    start: int = Field(..., ge=1, le=999)
+    count: int = Field(..., ge=1, le=100)
+
+
 class SpaceUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=50)
     tags: list[str] | None = None

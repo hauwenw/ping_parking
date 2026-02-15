@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { Space, Site, Tag } from "@/lib/types";
 import { spaceStatusLabel, formatCurrency } from "@/lib/format";
@@ -45,15 +45,30 @@ const priceTierLabel: Record<string, string> = {
   custom: "自訂",
 };
 
+function generatePreviewNames(prefix: string, start: number, count: number): string[] {
+  const maxNum = start + count - 1;
+  const pad = maxNum > 99 ? 3 : 2;
+  return Array.from({ length: count }, (_, i) =>
+    `${prefix}-${String(start + i).padStart(pad, "0")}`
+  );
+}
+
 export default function SpacesPage() {
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [batchDialogOpen, setBatchDialogOpen] = useState(false);
   const [filterSite, setFilterSite] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterTag, setFilterTag] = useState<string>("all");
+
+  // Batch create form state
+  const [batchSiteId, setBatchSiteId] = useState<string>("");
+  const [batchPrefix, setBatchPrefix] = useState<string>("");
+  const [batchStart, setBatchStart] = useState<number>(1);
+  const [batchCount, setBatchCount] = useState<number>(10);
 
   const load = useCallback(async () => {
     const params = new URLSearchParams();
@@ -91,40 +106,145 @@ export default function SpacesPage() {
     }
   };
 
+  const handleBatchSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      await api.post("/api/v1/spaces/batch", {
+        site_id: batchSiteId,
+        prefix: batchPrefix,
+        start: batchStart,
+        count: batchCount,
+      });
+      toast.success(`已新增 ${batchCount} 個車位`);
+      setBatchDialogOpen(false);
+      setBatchPrefix("");
+      setBatchStart(1);
+      setBatchCount(10);
+      setBatchSiteId("");
+      await load();
+    } catch (err) {
+      if (err instanceof ApiError) toast.error(err.message);
+    }
+  };
+
+  const previewNames = useMemo(() => {
+    if (!batchPrefix || batchCount < 1 || batchStart < 1) return [];
+    return generatePreviewNames(batchPrefix, batchStart, batchCount);
+  }, [batchPrefix, batchStart, batchCount]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">車位管理</h2>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>新增車位</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>新增車位</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>停車場</Label>
-                <Select name="site_id" required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="選擇停車場" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sites.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="name">車位名稱</Label>
-                <Input id="name" name="name" placeholder="A-01" required />
-              </div>
-              <Button type="submit" className="w-full">新增</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Dialog open={batchDialogOpen} onOpenChange={setBatchDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">批次新增</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>批次新增車位</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleBatchSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>停車場</Label>
+                  <Select value={batchSiteId} onValueChange={setBatchSiteId} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="選擇停車場" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sites.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="batch-prefix">前綴</Label>
+                  <Input
+                    id="batch-prefix"
+                    value={batchPrefix}
+                    onChange={(e) => setBatchPrefix(e.target.value)}
+                    placeholder="A"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="batch-start">起始編號</Label>
+                    <Input
+                      id="batch-start"
+                      type="number"
+                      min={1}
+                      max={999}
+                      value={batchStart}
+                      onChange={(e) => setBatchStart(Number(e.target.value))}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="batch-count">數量</Label>
+                    <Input
+                      id="batch-count"
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={batchCount}
+                      onChange={(e) => setBatchCount(Number(e.target.value))}
+                      required
+                    />
+                  </div>
+                </div>
+                {previewNames.length > 0 && (
+                  <div className="rounded-md bg-muted p-3">
+                    <p className="text-sm text-muted-foreground mb-1">
+                      將建立 {previewNames.length} 個車位：
+                    </p>
+                    <p className="text-sm font-mono">
+                      {previewNames.length <= 8
+                        ? previewNames.join(", ")
+                        : `${previewNames.slice(0, 4).join(", ")}, ... , ${previewNames.slice(-2).join(", ")}`}
+                    </p>
+                  </div>
+                )}
+                <Button type="submit" className="w-full" disabled={!batchSiteId || !batchPrefix}>
+                  批次新增
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>新增車位</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>新增車位</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>停車場</Label>
+                  <Select name="site_id" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="選擇停車場" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sites.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">車位名稱</Label>
+                  <Input id="name" name="name" placeholder="A-01" required />
+                </div>
+                <Button type="submit" className="w-full">新增</Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Filters */}

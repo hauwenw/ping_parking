@@ -135,3 +135,72 @@ async def test_rename_space_to_existing_name(auth_client: AsyncClient, site_id: 
         json={"name": "REN-01"},
     )
     assert response.status_code == 409
+
+
+# ── Batch Create Tests ──────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_batch_create_spaces(auth_client: AsyncClient, site_id: str) -> None:
+    """Batch create 5 spaces with prefix and start number."""
+    response = await auth_client.post(
+        "/api/v1/spaces/batch",
+        json={"site_id": site_id, "prefix": "Z", "start": 1, "count": 5},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert len(data) == 5
+    names = [s["name"] for s in data]
+    assert names == ["Z-01", "Z-02", "Z-03", "Z-04", "Z-05"]
+
+
+@pytest.mark.asyncio
+async def test_batch_create_with_start_offset(auth_client: AsyncClient, site_id: str) -> None:
+    """Batch create with start=5, count=3 should produce correct names."""
+    response = await auth_client.post(
+        "/api/v1/spaces/batch",
+        json={"site_id": site_id, "prefix": "W", "start": 5, "count": 3},
+    )
+    assert response.status_code == 201
+    names = [s["name"] for s in response.json()]
+    assert names == ["W-05", "W-06", "W-07"]
+
+
+@pytest.mark.asyncio
+async def test_batch_create_conflict(auth_client: AsyncClient, site_id: str) -> None:
+    """Batch create should fail if any name conflicts with existing spaces."""
+    # Pre-create a space that will conflict
+    await auth_client.post(
+        "/api/v1/spaces", json={"site_id": site_id, "name": "Y-03"}
+    )
+    response = await auth_client.post(
+        "/api/v1/spaces/batch",
+        json={"site_id": site_id, "prefix": "Y", "start": 1, "count": 5},
+    )
+    assert response.status_code == 400
+    assert "Y-03" in response.json()["message"]
+
+
+@pytest.mark.asyncio
+async def test_batch_create_invalid_prefix(auth_client: AsyncClient, site_id: str) -> None:
+    """Prefix with special characters should be rejected."""
+    response = await auth_client.post(
+        "/api/v1/spaces/batch",
+        json={"site_id": site_id, "prefix": "A@#", "start": 1, "count": 3},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_batch_create_invalid_site(auth_client: AsyncClient) -> None:
+    """Batch create with non-existent site should return 404."""
+    response = await auth_client.post(
+        "/api/v1/spaces/batch",
+        json={
+            "site_id": "00000000-0000-0000-0000-000000000000",
+            "prefix": "X",
+            "start": 1,
+            "count": 3,
+        },
+    )
+    assert response.status_code == 404

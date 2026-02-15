@@ -10,7 +10,7 @@ from app.models.admin_user import AdminUser
 from app.models.site import Site
 from app.models.space import Space
 from app.models.tag import Tag
-from app.schemas.space import SpaceCreate, SpaceUpdate
+from app.schemas.space import SpaceBatchCreate, SpaceCreate, SpaceUpdate
 from app.services.audit_logger import AuditLogger
 from app.utils.errors import BusinessError, DuplicateError, NotFoundError
 from app.utils.pricing import compute_space_price
@@ -101,6 +101,54 @@ class SpaceService:
         )
         await self.db.commit()
         return space
+
+    async def batch_create(self, data: SpaceBatchCreate) -> list[Space]:
+        # Verify site exists
+        site_result = await self.db.execute(
+            select(Site).where(Site.id == data.site_id)
+        )
+        if site_result.scalar_one_or_none() is None:
+            raise NotFoundError("停車場")
+
+        # Generate names with zero-padded numbers
+        max_num = data.start + data.count - 1
+        pad = 3 if max_num > 99 else 2
+        names = [f"{data.prefix}-{i:0{pad}d}" for i in range(data.start, max_num + 1)]
+
+        # Check for conflicts
+        result = await self.db.execute(
+            select(Space.name).where(
+                Space.site_id == data.site_id,
+                Space.name.in_(names),
+            )
+        )
+        existing = [row[0] for row in result.all()]
+        if existing:
+            raise BusinessError(f"以下車位名稱已存在：{', '.join(existing)}")
+
+        # Bulk insert
+        from uuid import uuid4
+
+        batch_id = uuid4()
+        spaces = []
+        for name in names:
+            space = Space(site_id=data.site_id, name=name)
+            self.db.add(space)
+            spaces.append(space)
+
+        await self.db.flush()
+
+        # Single audit log for the batch
+        await self.audit.log(
+            action="BATCH_CREATE",
+            user=self.user,
+            table_name="spaces",
+            new_values={"prefix": data.prefix, "start": data.start, "count": data.count, "names": names},
+            ip_address=self.ip,
+            batch_id=batch_id,
+        )
+        await self.db.commit()
+        return spaces
 
     async def update(self, space_id: UUID, data: SpaceUpdate) -> Space:
         space = await self.get(space_id)

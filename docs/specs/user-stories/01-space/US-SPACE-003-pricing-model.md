@@ -38,16 +38,18 @@ As a parking lot admin, I want to set pricing at site level with optional per-sp
 ## Business Rules
 
 ### Pricing Hierarchy
-1. **Tag price** (if tag has price defined and was applied to space)
-2. **Custom space price** (if admin manually set price for this space)
+1. **Custom space price** (if admin manually set price for this space) — HIGHEST PRIORITY
+2. **Tag price** (if tag has price defined and was applied to space)
 3. **Site base price** (default fallback)
 
-**Priority**: Tag price > Custom price > Site base price
+**Priority**: Custom price > Tag price > Site base price
+
+**Rationale**: Custom price represents an explicit manual override by the admin and should take precedence over all automatic pricing (tag or site base). This ensures that when an admin sets a custom price, it truly overrides everything.
 
 ### Price Inheritance & Overrides
-- **Site base → Space**: Automatic inheritance on space creation, updates when site base changes (unless custom override exists)
-- **Tag price → Space**: Replaces current price when tag is added (if tag has price)
-- **Custom price**: Admin can always manually override, which breaks inheritance
+- **Site base → Space**: Automatic inheritance on space creation, updates when site base changes (unless custom override or tag price exists)
+- **Tag price → Space**: Applies when tag with price is added (overrides site base, but NOT custom price)
+- **Custom price**: Admin can always manually set custom price, which has HIGHEST priority and overrides both tag and site base prices
 
 ### Price Immutability for Agreements
 - Agreement price = snapshot of space price at creation time
@@ -56,10 +58,11 @@ As a parking lot admin, I want to set pricing at site level with optional per-sp
 - Admin can manually edit agreement price via edit form (logged to audit)
 
 ### Tag Price Behavior
-- **Add tag with price**: Space price updates immediately
-- **Remove tag**: Price stays (does NOT revert to previous source)
-- **Multiple tags with prices**: Last applied tag wins
+- **Add tag with price**: Space price updates immediately ONLY if custom_price is NULL (custom price has higher priority)
+- **Remove tag**: Price stays (does NOT revert to previous source), price_source changes to 'custom'
+- **Multiple tags with prices**: Last applied tag wins (if no custom price set)
 - **Update tag price definition**: Does NOT auto-update spaces (prevents unexpected bulk changes)
+- **Tag price vs Custom price**: If space has custom_price set, adding a tag with price does NOT override the custom price
 
 ## UI Requirements
 
@@ -113,10 +116,13 @@ ALTER TABLE sites ADD COLUMN daily_base_price INTEGER NOT NULL DEFAULT 150;
 
 **Spaces table** (add pricing columns):
 ```sql
-ALTER TABLE spaces ADD COLUMN monthly_price INTEGER NOT NULL;
+ALTER TABLE spaces ADD COLUMN custom_price INTEGER; -- NULL means no override; when set, has HIGHEST priority
+ALTER TABLE spaces ADD COLUMN monthly_price INTEGER NOT NULL; -- Computed effective price
 ALTER TABLE spaces ADD COLUMN daily_price INTEGER NOT NULL;
 ALTER TABLE spaces ADD COLUMN price_source TEXT CHECK (price_source IN ('site_base', 'custom', 'tag'));
 ALTER TABLE spaces ADD COLUMN price_source_tag_id UUID REFERENCES tags(id); -- NULL if not from tag
+
+-- Note: custom_price only sets monthly price; daily price follows tag or site base
 ```
 
 **Tags table** (add optional pricing):
@@ -152,9 +158,11 @@ function getInitialSpacePrice(siteId: string): { monthly: number, daily: number 
 **Space price after tag added**:
 ```typescript
 function applyTagToSpace(spaceId: string, tagId: string) {
+  const space = await getSpace(spaceId);
   const tag = await getTag(tagId);
 
-  if (tag.has_price) {
+  // Only apply tag price if space doesn't have custom price
+  if (tag.has_price && space.custom_price === null) {
     await updateSpace(spaceId, {
       monthly_price: tag.monthly_price,
       daily_price: tag.daily_price,
@@ -162,7 +170,7 @@ function applyTagToSpace(spaceId: string, tagId: string) {
       price_source_tag_id: tagId
     });
   }
-  // If tag has no price, only update tags array, price unchanged
+  // If space has custom price or tag has no price, only update tags array
 }
 ```
 
@@ -242,8 +250,14 @@ CLAUDE.md (tag-based pricing), init_draft.md (space pricing)
 3. Remove "有屋頂" tag → monthly=4000 (price unchanged), source='custom'
 
 **Space A-05** (multiple tags with prices):
-1. Add "有屋頂" tag (monthly=4000) → Price=4000
-2. Add "VIP" tag (monthly=5000) → Price=5000 (last tag wins)
+1. Add "有屋頂" tag (monthly=4000) → Price=4000, source='tag'
+2. Add "VIP" tag (monthly=5000) → Price=5000, source='tag' (last tag wins)
+
+**Space A-06** (custom price overrides tag price):
+1. Initial: Tags=[], monthly=3600 (site base)
+2. Admin sets custom_price=3800 → monthly=3800, source='custom'
+3. Add "有屋頂" tag (monthly=4000) → Price stays 3800 (custom overrides tag), source='custom'
+4. Remove custom_price (set to null) → Price updates to 4000 (tag price now applies), source='tag'
 
 ### Agreement Price Calculation
 
@@ -268,9 +282,9 @@ CLAUDE.md (tag-based pricing), init_draft.md (space pricing)
 
 **Scenario 1: Site base price increases**:
 1. Site A base changes: 3600 → 4000
-2. Space A-01 (site_base) → Auto-updates to 4000
-3. Space A-02 (tag) → No change (still 4000 from tag)
-4. Space A-03 (custom) → No change (still 3800)
+2. Space A-01 (site_base, no custom, no tags) → Auto-updates to 4000
+3. Space A-02 (tag, no custom) → No change (still 4000 from tag)
+4. Space A-03 (custom) → No change (still 3800, custom has highest priority)
 
 **Scenario 2: Tag price changes**:
 1. "有屋頂" tag price changes: 4000 → 4500
@@ -279,6 +293,12 @@ CLAUDE.md (tag-based pricing), init_draft.md (space pricing)
 
 **Scenario 3: Agreement created, then space price changes**:
 1. Create agreement for Space A-02 (monthly=4000) → Agreement price=4000
-2. Later, Space A-02 price changes to 4500 (new tag applied)
+2. Later, Space A-02 price changes to 4500 (new tag applied or custom price set)
 3. Existing agreement price → Still 4000 (immutable snapshot)
 4. New agreements for A-02 → Use 4500
+
+**Scenario 4: Custom price priority**:
+1. Space A-07 has tag "有屋頂" (monthly=4000) → Price=4000, source='tag'
+2. Admin sets custom_price=4200 → Price=4200, source='custom'
+3. Later, admin adds "VIP" tag (monthly=5000) → Price stays 4200 (custom overrides tag)
+4. Admin removes custom_price (sets to null) → Price updates to 5000 (VIP tag price now applies)

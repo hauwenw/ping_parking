@@ -13,12 +13,12 @@ As a parking lot admin, I want to view all parking spaces in a filterable, sorta
 - **AC2**: Each row shows:
   - Space name: e.g., "A-01"
   - Site: Site name (e.g., "A區停車場")
-  - Tags: Color dots with tag names (e.g., [blue dot] 有屋頂, [green dot] 大車位)
+  - Tags: Color-coded badges with tag names (e.g., [blue dot] 有屋頂, [green dot] 大車位) — each tag displays colored dot matching tag color
   - Monthly price: NT$X,XXX
   - Daily price: NT$XXX
   - Status: Badge (可租用 green / 已租出 red / 維護中 orange / 已預留 blue)
   - Current tenant: Customer name + license plate (if occupied), or "—" if available
-  - Actions: "查看" link → Space detail page
+  - Actions: "編輯" button + "刪除" button (consistent with tags/sites pages)
 - **AC3**: Default sort: Space name ascending (A-01, A-02, ..., B-01, ...)
 - **AC4**: Pagination: 20 spaces per page
 
@@ -35,8 +35,9 @@ As a parking lot admin, I want to view all parking spaces in a filterable, sorta
 - **AC8**: Search bar: "搜尋車位名稱" (partial match, e.g., "A-0" matches A-01 through A-09)
 - **AC9**: Site filter dropdown: "全部停車場" / site names (shows active sites only)
 - **AC10**: Status filter dropdown: "全部狀態" / "可租用" / "已租出" / "維護中" / "已預留"
-- **AC11**: Tag filter: Multi-select dropdown "全部標籤" / tag names with color dots
+- **AC11**: Tag filter: Multi-select dropdown "全部標籤" / tag names with color dots displayed in dropdown
   - Tag filter uses AND logic: selecting "有屋頂" + "VIP" shows spaces with BOTH tags
+  - Each tag option shows color dot matching tag color for visual consistency
 - **AC12**: "清除篩選" button: Resets all filters to default
 - **AC13**: Filter combination: Search + Site + Status + Tags (all applied together via AND logic)
 - **AC14**: Result count: "顯示 1-20 筆，共 100 個車位"
@@ -108,7 +109,7 @@ As a parking lot admin, I want to view all parking spaces in a filterable, sorta
 **Filter Dropdowns**:
 - 停車場: "全部停車場" ▼ (single-select)
 - 狀態: "全部狀態" ▼ (single-select)
-- 標籤: "全部標籤" ▼ (multi-select with checkboxes, color dots)
+- 標籤: "全部標籤" ▼ (multi-select with checkboxes, each tag shows color dot before name)
 
 **Clear Button**: "清除篩選" (visible when any filter applied)
 
@@ -116,9 +117,14 @@ As a parking lot admin, I want to view all parking spaces in a filterable, sorta
 **Columns**:
 | 車位 ↑ | 停車場 | 標籤 | 月租價格 | 日租價格 | 狀態 | 目前租客 | 操作 |
 |--------|--------|------|---------|---------|------|---------|------|
-| A-01 | A區停車場 | [blue]有屋頂 | NT$4,000 | NT$180 | 已租出 | 王小明 (ABC-1234) | 查看 |
-| A-02 | A區停車場 | [green]大車位 | NT$3,600 | NT$150 | 可租用 | — | 查看 |
-| A-03 | A區停車場 | | NT$3,600 | NT$150 | 維護中 | — | 查看 |
+| A-01 | A區停車場 | [blue dot]有屋頂 | NT$4,000 | NT$180 | 已租出 | 王小明 (ABC-1234) | 編輯 \| 刪除 |
+| A-02 | A區停車場 | [green dot]大車位 | NT$3,600 | NT$150 | 可租用 | — | 編輯 \| 刪除 |
+| A-03 | A區停車場 | | NT$3,600 | NT$150 | 維護中 | — | 編輯 \| 刪除 |
+
+**Tag Display**:
+- Each tag shown as badge with color dot (colored circle) before tag name
+- Color dot matches tag's configured color (e.g., blue #2196F3 for "有屋頂")
+- Multiple tags displayed with gap spacing
 
 **Status Badges**:
 - 可租用: Green badge
@@ -126,9 +132,11 @@ As a parking lot admin, I want to view all parking spaces in a filterable, sorta
 - 維護中: Orange badge
 - 已預留: Blue badge
 
-**Row Hover**: Highlight entire row, cursor pointer (click → space detail)
+**Row Hover**: Highlight entire row, cursor pointer
 
-**Actions Column**: "查看" link
+**Actions Column**:
+- "編輯" button → Opens edit modal (see US-SPACE-002 for edit modal details)
+- "刪除" button → Opens delete confirmation dialog
 
 ### Pagination
 **Position**: Bottom-right of table

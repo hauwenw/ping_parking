@@ -1,7 +1,6 @@
 """Three-tier pricing model for parking spaces.
 
-Priority: Tag price > Custom space price > Site base price
-(Per US-SPACE-003 spec)
+Priority: Custom space price > Tag price > Site base price
 """
 
 from __future__ import annotations
@@ -21,7 +20,7 @@ def compute_space_price(
 ) -> dict:
     """Compute the effective price for a space.
 
-    Priority: Tag price > Custom price > Site base price.
+    Priority: Custom price > Tag price > Site base price.
     Returns dict with keys: monthly, daily, tier, tag_name (if tag-priced).
     """
     site_monthly = site.monthly_base_price or 0
@@ -33,12 +32,7 @@ def compute_space_price(
     tier = "site"
     tag_name = None
 
-    # Custom price overrides site base
-    if custom_price is not None:
-        monthly = custom_price
-        tier = "custom"
-
-    # Tag price has highest priority — overrides both site and custom
+    # Tag price overrides site base
     if tags:
         tag_map = {t.name: t for t in all_tags}
         for tag_str in tags:
@@ -51,6 +45,11 @@ def compute_space_price(
                 tier = "tag"
                 tag_name = tag.name
                 break
+
+    # Custom price has highest priority — overrides both site and tag
+    if custom_price is not None:
+        monthly = custom_price
+        tier = "custom"
 
     return {
         "monthly": monthly,

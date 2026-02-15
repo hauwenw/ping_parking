@@ -82,10 +82,10 @@ async def test_custom_price_override_site(
 
 
 @pytest.mark.asyncio
-async def test_tag_overrides_custom_price(
+async def test_custom_price_overrides_tag(
     auth_client: AsyncClient, site_with_pricing: str, tag_with_pricing: dict
 ) -> None:
-    """Tag price has highest priority — overrides custom price."""
+    """Custom price has highest priority — overrides tag price."""
     resp = await auth_client.post(
         "/api/v1/spaces",
         json={
@@ -97,10 +97,9 @@ async def test_tag_overrides_custom_price(
     )
     assert resp.status_code == 201
     data = resp.json()
-    # Tag wins over custom
-    assert data["effective_monthly_price"] == 5000
-    assert data["price_tier"] == "tag"
-    assert data["price_tag_name"] == "VIP"
+    # Custom wins over tag
+    assert data["effective_monthly_price"] == 9999
+    assert data["price_tier"] == "custom"
 
 
 @pytest.mark.asyncio

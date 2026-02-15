@@ -2,24 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SpacesPage from './page';
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError } from '@/lib/api'; // Import actual api and ApiError
 import { toast } from 'sonner';
-
-// Mock the API calls
-jest.mock('@/lib/api', () => ({
-  api: {
-    get: jest.fn(),
-    post: jest.fn(),
-  },
-  ApiError: jest.fn((message, code, status) => {
-    const error = new Error(message);
-    // @ts-ignore
-    error.code = code;
-    // @ts-ignore
-    error.status = status;
-    return error;
-  }),
-}));
 
 // Mock sonner toast
 jest.mock('sonner', () => ({
@@ -28,6 +12,10 @@ jest.mock('sonner', () => ({
     error: jest.fn(),
   },
 }));
+
+// Spy on api.post and api.get
+let apiPostSpy: jest.SpyInstance;
+let apiGetSpy: jest.SpyInstance;
 
 describe('SpacesPage', () => {
   const mockSites = [{ id: 'site-1', name: 'Site A', monthly_base_price: 100, daily_base_price: 10 }];
@@ -47,13 +35,14 @@ describe('SpacesPage', () => {
   ];
 
   beforeEach(() => {
-    (api.get as jest.Mock).mockClear();
-    (api.post as jest.Mock).mockClear();
-    (toast.success as jest.Mock).mockClear();
-    (toast.error as jest.Mock).mockClear();
+    jest.clearAllMocks(); // Clear all mocks including toast
+
+    // Mock the API client methods
+    apiPostSpy = jest.spyOn(api, 'post');
+    apiGetSpy = jest.spyOn(api, 'get');
 
     // Default mock for API GET calls
-    (api.get as jest.Mock).mockImplementation((url: string) => {
+    apiGetSpy.mockImplementation((url: string) => {
       if (url.includes('/api/v1/sites')) {
         return Promise.resolve(mockSites);
       }
@@ -68,8 +57,8 @@ describe('SpacesPage', () => {
   });
 
   it('displays a toast error when creating a duplicate space name', async () => {
-    // Mock the API POST call to simulate a 409 Conflict
-    (api.post as jest.Mock).mockRejectedValue(
+    // Mock the API POST call to simulate a 409 Conflict using the actual ApiError class
+    apiPostSpy.mockRejectedValueOnce(
       new ApiError('此場地已存在同名車位', 'conflict', 409)
     );
 
@@ -99,8 +88,5 @@ describe('SpacesPage', () => {
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('此場地已存在同名車位');
     });
-
-    // Optionally, check if the dialog is still open or closed
-    // expect(screen.getByRole('dialog')).toBeInTheDocument(); // Depends on desired UX
   });
 });

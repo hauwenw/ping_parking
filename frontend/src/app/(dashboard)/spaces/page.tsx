@@ -6,6 +6,7 @@ import type { Space, Site, Tag } from "@/lib/types";
 import { spaceStatusLabel, formatCurrency } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -60,6 +61,8 @@ export default function SpacesPage() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Space | null>(null);
   const [filterSite, setFilterSite] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterTag, setFilterTag] = useState<string>("all");
@@ -69,6 +72,12 @@ export default function SpacesPage() {
   const [batchPrefix, setBatchPrefix] = useState<string>("");
   const [batchStart, setBatchStart] = useState<number>(1);
   const [batchCount, setBatchCount] = useState<number>(10);
+
+  // Edit form state
+  const [editName, setEditName] = useState("");
+  const [editStatus, setEditStatus] = useState("available");
+  const [editTags, setEditTags] = useState<string[]>([]);
+  const [editCustomPrice, setEditCustomPrice] = useState<string>("");
 
   const load = useCallback(async () => {
     const params = new URLSearchParams();
@@ -88,6 +97,15 @@ export default function SpacesPage() {
   }, [filterSite, filterStatus, filterTag]);
 
   useEffect(() => { load(); }, [load]);
+
+  const openEditDialog = (space: Space) => {
+    setEditing(space);
+    setEditName(space.name);
+    setEditStatus(space.status);
+    setEditTags([...space.tags]);
+    setEditCustomPrice(space.custom_price != null ? String(space.custom_price) : "");
+    setEditDialogOpen(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -125,6 +143,49 @@ export default function SpacesPage() {
     } catch (err) {
       if (err instanceof ApiError) toast.error(err.message);
     }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editing) return;
+    const body: Record<string, unknown> = {
+      name: editName,
+      status: editStatus,
+      tags: editTags,
+    };
+    if (editCustomPrice !== "") {
+      body.custom_price = Number(editCustomPrice);
+    } else {
+      body.custom_price = null;
+    }
+    try {
+      await api.put(`/api/v1/spaces/${editing.id}`, body);
+      toast.success("車位已更新");
+      setEditDialogOpen(false);
+      setEditing(null);
+      await load();
+    } catch (err) {
+      if (err instanceof ApiError) toast.error(err.message);
+    }
+  };
+
+  const handleDelete = async (space: Space) => {
+    if (!confirm(`確定要刪除車位「${space.name}」嗎？`)) return;
+    try {
+      await api.delete(`/api/v1/spaces/${space.id}`);
+      toast.success("車位已刪除");
+      await load();
+    } catch (err) {
+      if (err instanceof ApiError) toast.error(err.message);
+    }
+  };
+
+  const toggleTag = (tagName: string) => {
+    setEditTags((prev) =>
+      prev.includes(tagName)
+        ? prev.filter((t) => t !== tagName)
+        : [...prev, tagName]
+    );
   };
 
   const tagColorMap = useMemo(() => {
@@ -253,6 +314,80 @@ export default function SpacesPage() {
         </div>
       </div>
 
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        setEditDialogOpen(open);
+        if (!open) setEditing(null);
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>編輯車位</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">車位名稱</Label>
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>狀態</Label>
+              <Select value={editStatus} onValueChange={setEditStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="available">可用</SelectItem>
+                  <SelectItem value="occupied">已占用</SelectItem>
+                  <SelectItem value="reserved">已預約</SelectItem>
+                  <SelectItem value="maintenance">維護中</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>標籤</Label>
+              <div className="rounded-md border p-3 space-y-2 max-h-48 overflow-y-auto">
+                {tags.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">尚無標籤</p>
+                ) : (
+                  tags.map((t) => (
+                    <label key={t.id} className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={editTags.includes(t.name)}
+                        onCheckedChange={() => toggleTag(t.name)}
+                      />
+                      <span
+                        className="inline-block h-3 w-3 rounded-full shrink-0"
+                        style={{ backgroundColor: t.color || "#6B7280" }}
+                      />
+                      <span className="text-sm">{t.name}</span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-custom-price">自訂月租價格</Label>
+              <Input
+                id="edit-custom-price"
+                type="number"
+                min={0}
+                value={editCustomPrice}
+                onChange={(e) => setEditCustomPrice(e.target.value)}
+                placeholder="留空則使用標籤或場地價格"
+              />
+              <p className="text-xs text-muted-foreground">
+                設定後將覆蓋標籤和場地價格。清空則恢復預設。
+              </p>
+            </div>
+            <Button type="submit" className="w-full">儲存</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Filters */}
       <div className="flex items-center gap-2 flex-wrap">
         <Select value={filterSite} onValueChange={setFilterSite}>
@@ -314,6 +449,7 @@ export default function SpacesPage() {
                 <TableHead>標籤</TableHead>
                 <TableHead>月租價格</TableHead>
                 <TableHead>價格來源</TableHead>
+                <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -351,6 +487,14 @@ export default function SpacesPage() {
                         {s.price_tag_name ? `(${s.price_tag_name})` : ""}
                       </Badge>
                     ) : "-"}
+                  </TableCell>
+                  <TableCell className="text-right space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => openEditDialog(s)}>
+                      編輯
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(s)}>
+                      刪除
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

@@ -127,9 +127,6 @@ class AgreementService:
         self.db.add(payment)
         await self.db.flush()
 
-        # Update space status to occupied
-        space.status = "occupied"
-
         await self.audit.log_create(
             table_name="agreements",
             record_id=agreement.id,
@@ -165,14 +162,6 @@ class AgreementService:
         # Void pending payment
         if agreement.payment and agreement.payment.status == "pending":
             agreement.payment.status = "voided"
-
-        # Release space
-        space_result = await self.db.execute(
-            select(Space).where(Space.id == agreement.space_id)
-        )
-        space = space_result.scalar_one_or_none()
-        if space:
-            space.status = "available"
 
         await self.db.flush()
         await self.audit.log_update(

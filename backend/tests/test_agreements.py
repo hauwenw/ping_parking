@@ -144,22 +144,28 @@ async def test_double_booking_prevented(
 
 
 @pytest.mark.asyncio
-async def test_space_becomes_occupied(
+async def test_space_status_computed_from_agreement_dates(
     auth_client: AsyncClient, customer_id: str, space_id: str
 ) -> None:
+    """Space status is computed from agreement dates, not stored."""
     await auth_client.post(
         "/api/v1/agreements",
         json={
             "customer_id": customer_id,
             "space_id": space_id,
             "agreement_type": "monthly",
-            "start_date": "2026-03-01",
+            "start_date": "2026-03-01",  # Future agreement
             "price": 3600,
             "license_plates": "ABC-1234",
         },
     )
     space_resp = await auth_client.get(f"/api/v1/spaces/{space_id}")
-    assert space_resp.json()["status"] == "occupied"
+    data = space_resp.json()
+    # Stored status should NOT be mutated
+    assert data["status"] == "available"
+    # Computed status reflects future agreement (not yet active)
+    assert data["computed_status"] == "available"
+    assert data["active_agreement_id"] is None
 
 
 @pytest.mark.asyncio
@@ -187,9 +193,14 @@ async def test_terminate_agreement(
     assert response.json()["terminated_at"] is not None
     assert response.json()["payment_status"] == "voided"
 
-    # Space should be available again
+    # Verify space status not mutated, computed status reflects terminated agreement
     space_resp = await auth_client.get(f"/api/v1/spaces/{space_id}")
-    assert space_resp.json()["status"] == "available"
+    data = space_resp.json()
+    # Stored status should NOT be mutated
+    assert data["status"] == "available"
+    # Computed status reflects no active agreement
+    assert data["computed_status"] == "available"
+    assert data["active_agreement_id"] is None
 
 
 @pytest.mark.asyncio

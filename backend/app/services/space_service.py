@@ -61,6 +61,51 @@ class SpaceService:
             custom_price=space.custom_price,
         )
 
+    async def compute_status(self, space_id: UUID) -> str:
+        """Compute space status based on active agreements.
+
+        Returns:
+            "occupied" if current_date is within any non-terminated agreement
+            "available" otherwise
+        """
+        from datetime import date
+
+        from app.models.agreement import Agreement
+
+        today = date.today()
+
+        result = await self.db.execute(
+            select(Agreement).where(
+                Agreement.space_id == space_id,
+                Agreement.terminated_at.is_(None),
+                Agreement.start_date <= today,
+                Agreement.end_date >= today,
+            ).limit(1)
+        )
+
+        if result.scalar_one_or_none():
+            return "occupied"
+        return "available"
+
+    async def get_active_agreement(self, space_id: UUID):
+        """Get the currently active agreement for this space, if any."""
+        from datetime import date
+
+        from app.models.agreement import Agreement
+
+        today = date.today()
+
+        result = await self.db.execute(
+            select(Agreement).where(
+                Agreement.space_id == space_id,
+                Agreement.terminated_at.is_(None),
+                Agreement.start_date <= today,
+                Agreement.end_date >= today,
+            ).limit(1)
+        )
+
+        return result.scalar_one_or_none()
+
     async def get(self, space_id: UUID) -> Space:
         result = await self.db.execute(
             select(Space).options(selectinload(Space.site)).where(Space.id == space_id)

@@ -37,5 +37,8 @@ class SpaceResponse(BaseModel):
     effective_daily_price: int | None = None
     price_tier: str | None = None  # "site", "tag", "custom"
     price_tag_name: str | None = None
+    # Computed status fields
+    computed_status: str | None = None  # "available" or "occupied"
+    active_agreement_id: UUID | None = None
 
     model_config = {"from_attributes": True}

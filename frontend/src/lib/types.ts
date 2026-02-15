@@ -29,6 +29,8 @@ export interface Space {
   effective_daily_price: number | null;
   price_tier: "site" | "tag" | "custom" | null;
   price_tag_name: string | null;
+  computed_status: "available" | "occupied" | null;
+  active_agreement_id: string | null;
 }
 
 export interface Customer {

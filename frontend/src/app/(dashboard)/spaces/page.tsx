@@ -458,9 +458,19 @@ export default function SpacesPage() {
                   <TableCell className="font-medium">{s.name}</TableCell>
                   <TableCell>{s.site_name}</TableCell>
                   <TableCell>
-                    <Badge variant={statusColor[s.status] || "default"}>
-                      {spaceStatusLabel(s.status)}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={statusColor[s.computed_status || s.status] || "default"}>
+                        {spaceStatusLabel(s.computed_status || s.status)}
+                      </Badge>
+                      {s.active_agreement_id && (
+                        <a
+                          href={`/agreements/${s.active_agreement_id}`}
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          查看合約
+                        </a>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">

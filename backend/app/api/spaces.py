@@ -15,7 +15,13 @@ def _get_ip(request: Request) -> str | None:
     return request.client.host if request.client else None
 
 
-def _to_response(s: Space, all_tags: list[Tag] | None = None, svc: SpaceService | None = None) -> SpaceResponse:
+def _to_response(
+    s: Space,
+    all_tags: list[Tag] | None = None,
+    svc: SpaceService | None = None,
+    computed_status: str | None = None,
+    active_agreement_id: UUID | None = None,
+) -> SpaceResponse:
     resp = SpaceResponse(
         id=s.id,
         site_id=s.site_id,
@@ -24,6 +30,8 @@ def _to_response(s: Space, all_tags: list[Tag] | None = None, svc: SpaceService 
         tags=s.tags or [],
         custom_price=s.custom_price,
         site_name=s.site.name if s.site else None,
+        computed_status=computed_status,
+        active_agreement_id=active_agreement_id,
     )
     if svc and all_tags is not None:
         pricing = svc.compute_pricing(s, all_tags)
@@ -47,7 +55,22 @@ async def list_spaces(
     svc = SpaceService(db, current_user)
     spaces = await svc.list(site_id=site_id, status=status, tag=tag, offset=offset, limit=limit)
     all_tags = await svc.get_all_tags()
-    return [_to_response(s, all_tags, svc) for s in spaces]
+
+    # Compute status and active agreements for all spaces
+    results = []
+    for s in spaces:
+        computed_status = await svc.compute_status(s.id)
+        active_agreement = await svc.get_active_agreement(s.id)
+        results.append(
+            _to_response(
+                s,
+                all_tags,
+                svc,
+                computed_status=computed_status,
+                active_agreement_id=active_agreement.id if active_agreement else None,
+            )
+        )
+    return results
 
 
 @router.post("/batch", response_model=list[SpaceResponse], status_code=201)
@@ -64,7 +87,18 @@ async def batch_create_spaces(
     result = []
     for space in spaces:
         loaded = await svc.get(space.id)
-        result.append(_to_response(loaded, all_tags, svc))
+        # Compute status
+        computed_status = await svc.compute_status(loaded.id)
+        active_agreement = await svc.get_active_agreement(loaded.id)
+        result.append(
+            _to_response(
+                loaded,
+                all_tags,
+                svc,
+                computed_status=computed_status,
+                active_agreement_id=active_agreement.id if active_agreement else None,
+            )
+        )
     return result
 
 
@@ -75,7 +109,18 @@ async def get_space(
     svc = SpaceService(db, current_user)
     space = await svc.get(space_id)
     all_tags = await svc.get_all_tags()
-    return _to_response(space, all_tags, svc)
+
+    # Compute status
+    computed_status = await svc.compute_status(space.id)
+    active_agreement = await svc.get_active_agreement(space.id)
+
+    return _to_response(
+        space,
+        all_tags,
+        svc,
+        computed_status=computed_status,
+        active_agreement_id=active_agreement.id if active_agreement else None,
+    )
 
 
 @router.post("", response_model=SpaceResponse, status_code=201)
@@ -90,7 +135,18 @@ async def create_space(
     # Re-fetch with site relationship loaded
     space = await svc.get(space.id)
     all_tags = await svc.get_all_tags()
-    return _to_response(space, all_tags, svc)
+
+    # Compute status
+    computed_status = await svc.compute_status(space.id)
+    active_agreement = await svc.get_active_agreement(space.id)
+
+    return _to_response(
+        space,
+        all_tags,
+        svc,
+        computed_status=computed_status,
+        active_agreement_id=active_agreement.id if active_agreement else None,
+    )
 
 
 @router.put("/{space_id}", response_model=SpaceResponse)
@@ -106,7 +162,18 @@ async def update_space(
     # Re-fetch with site relationship loaded
     space = await svc.get(space.id)
     all_tags = await svc.get_all_tags()
-    return _to_response(space, all_tags, svc)
+
+    # Compute status
+    computed_status = await svc.compute_status(space.id)
+    active_agreement = await svc.get_active_agreement(space.id)
+
+    return _to_response(
+        space,
+        all_tags,
+        svc,
+        computed_status=computed_status,
+        active_agreement_id=active_agreement.id if active_agreement else None,
+    )
 
 
 @router.delete("/{space_id}", status_code=204)

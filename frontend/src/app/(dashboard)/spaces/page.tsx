@@ -127,6 +127,12 @@ export default function SpacesPage() {
     }
   };
 
+  const tagColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const t of tags) map[t.name] = t.color;
+    return map;
+  }, [tags]);
+
   const previewNames = useMemo(() => {
     if (!batchPrefix || batchCount < 1 || batchStart < 1) return [];
     return generatePreviewNames(batchPrefix, batchStart, batchCount);
@@ -281,7 +287,15 @@ export default function SpacesPage() {
           <SelectContent>
             <SelectItem value="all">全部標籤</SelectItem>
             {tags.map((t) => (
-              <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
+              <SelectItem key={t.id} value={t.name}>
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: t.color || "#6B7280" }}
+                  />
+                  {t.name}
+                </span>
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -315,7 +329,13 @@ export default function SpacesPage() {
                   <TableCell>
                     <div className="flex gap-1">
                       {s.tags.map((tag) => (
-                        <Badge key={tag} variant="outline">{tag}</Badge>
+                        <Badge key={tag} variant="outline" className="flex items-center gap-1">
+                          <span
+                            className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: tagColorMap[tag] || "#6B7280" }}
+                          />
+                          {tag}
+                        </Badge>
                       ))}
                     </div>
                   </TableCell>

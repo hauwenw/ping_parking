@@ -18,7 +18,7 @@ cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # Configure DATABASE_URL, JWT_SECRET_KEY, ENCRYPTION_KEY
-alembic upgrade head          # Run migrations
+PYTHONPATH=. alembic upgrade head          # Run migrations
 python scripts/seed.py        # Seed demo data
 uvicorn app.main:app --reload # http://localhost:8000
 ```

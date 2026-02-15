@@ -62,7 +62,7 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
 async def seed_admin(db_session: AsyncSession) -> AdminUser:
     user = AdminUser(
         email="admin1@ping.tw",
-        hashed_password=hash_password("Password123"),
+        hashed_password=hash_password("Pass123"),
         display_name="管理員一",
     )
     db_session.add(user)
@@ -77,7 +77,7 @@ async def auth_client(
 ) -> AsyncGenerator[AsyncClient, None]:
     response = await client.post(
         "/api/v1/auth/login",
-        json={"email": "admin1@ping.tw", "password": "Password123"},
+        json={"email": "admin1@ping.tw", "password": "Pass123"},
     )
     token = response.json()["access_token"]
     client.headers["Authorization"] = f"Bearer {token}"

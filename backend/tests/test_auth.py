@@ -9,7 +9,7 @@ async def test_login_success(client: AsyncClient, seed_admin: AdminUser) -> None
     """POST /auth/login with valid credentials returns token."""
     response = await client.post(
         "/api/v1/auth/login",
-        json={"email": "admin1@ping.tw", "password": "Password123"},
+        json={"email": "admin1@ping.tw", "password": "Pass123"},
     )
     assert response.status_code == 200
     data = response.json()

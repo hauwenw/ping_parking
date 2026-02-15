@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from fastapi import HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -80,7 +82,15 @@ class SpaceService:
 
         space = Space(**data.model_dump())
         self.db.add(space)
-        await self.db.flush()
+        try:
+            await self.db.flush()
+        except IntegrityError as e:
+            await self.db.rollback() # Rollback the transaction
+            if "UNIQUE constraint failed: spaces.site_id, spaces.name" in str(e.orig):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT, detail="此場地已存在同名車位"
+                )
+            raise # Re-raise if it's another IntegrityError
 
         await self.audit.log_create(
             table_name="spaces",

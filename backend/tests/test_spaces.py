@@ -86,3 +86,21 @@ async def test_invalid_status_value(auth_client: AsyncClient, site_id: str) -> N
         json={"status": "invalid_status"},
     )
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_duplicate_space(auth_client: AsyncClient, site_id: str) -> None:
+    # Create the first space
+    response = await auth_client.post(
+        "/api/v1/spaces",
+        json={"site_id": site_id, "name": "DUPE-01"},
+    )
+    assert response.status_code == 201
+
+    # Attempt to create a duplicate space
+    response = await auth_client.post(
+        "/api/v1/spaces",
+        json={"site_id": site_id, "name": "DUPE-01"},
+    )
+    assert response.status_code == 409
+    assert "此場地已存在同名車位" in response.json()["detail"]

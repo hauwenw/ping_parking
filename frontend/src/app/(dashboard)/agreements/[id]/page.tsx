@@ -16,9 +16,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -34,6 +43,7 @@ export default function AgreementDetailPage() {
   const [loading, setLoading] = useState(true);
   const [terminateOpen, setTerminateOpen] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
+  const [editPaymentOpen, setEditPaymentOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -82,6 +92,27 @@ export default function AgreementDetailPage() {
       });
       toast.success("已記錄付款");
       setCompleteOpen(false);
+      await load();
+    } catch (err) {
+      if (err instanceof ApiError) toast.error(err.message);
+    }
+  };
+
+  const handleEditPayment = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!payment) return;
+    const form = new FormData(e.currentTarget);
+    try {
+      await api.put(`/api/v1/payments/${payment.id}`, {
+        amount: Number(form.get("amount")),
+        status: form.get("status") as string,
+        payment_date: (form.get("payment_date") as string) || null,
+        due_date: (form.get("due_date") as string) || null,
+        bank_reference: (form.get("bank_reference") as string) || null,
+        notes: (form.get("notes") as string) || null,
+      });
+      toast.success("付款已更新");
+      setEditPaymentOpen(false);
       await load();
     } catch (err) {
       if (err instanceof ApiError) toast.error(err.message);
@@ -192,8 +223,13 @@ export default function AgreementDetailPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>付款資訊</CardTitle>
-          {payment && payment.status === "pending" && (
-            <Button onClick={() => setCompleteOpen(true)}>記錄付款</Button>
+          {payment && (
+            <div className="space-x-2">
+              {payment.status === "pending" && (
+                <Button onClick={() => setCompleteOpen(true)}>記錄付款</Button>
+              )}
+              <Button variant="outline" onClick={() => setEditPaymentOpen(true)}>編輯付款</Button>
+            </div>
           )}
         </CardHeader>
         <CardContent>
@@ -210,17 +246,27 @@ export default function AgreementDetailPage() {
                 </Badge>
               </div>
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">付款日期</p>
-                <p>{payment.payment_date ? formatDate(payment.payment_date) : "-"}</p>
+                <p className="text-sm text-muted-foreground">應付日期</p>
+                <p>{payment.due_date ? formatDate(payment.due_date) : "-"}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">應付金額</p>
                 <p className="font-bold">{formatCurrency(payment.amount)}</p>
               </div>
               <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">付款日期</p>
+                <p>{payment.payment_date ? formatDate(payment.payment_date) : "-"}</p>
+              </div>
+              <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">銀行參考號</p>
                 <p className="font-mono text-sm">{payment.bank_reference || "-"}</p>
               </div>
+              {payment.notes && (
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">備註</p>
+                  <p className="text-sm">{payment.notes}</p>
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-muted-foreground">無付款記錄</p>
@@ -263,6 +309,94 @@ export default function AgreementDetailPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Edit payment dialog */}
+      {payment && (
+        <Dialog open={editPaymentOpen} onOpenChange={setEditPaymentOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>編輯付款</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleEditPayment} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_amount">金額 (NT$)</Label>
+                <Input
+                  id="edit_amount"
+                  name="amount"
+                  type="number"
+                  min={0}
+                  required
+                  defaultValue={payment.amount}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit_status">狀態</Label>
+                <Select name="status" required defaultValue={payment.status}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">待付款</SelectItem>
+                    <SelectItem value="completed">已付款</SelectItem>
+                    <SelectItem value="voided">已作廢</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit_due_date">應付日期</Label>
+                <Input
+                  id="edit_due_date"
+                  name="due_date"
+                  type="date"
+                  defaultValue={payment.due_date || (agreement ? agreement.start_date : "")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  預設為合約開始日期，可手動調整
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit_payment_date">付款日期</Label>
+                <Input
+                  id="edit_payment_date"
+                  name="payment_date"
+                  type="date"
+                  defaultValue={payment.payment_date || ""}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit_bank_reference">銀行參考號</Label>
+                <Input
+                  id="edit_bank_reference"
+                  name="bank_reference"
+                  maxLength={100}
+                  defaultValue={payment.bank_reference || ""}
+                  placeholder="轉帳單號或參考號碼"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit_notes">備註</Label>
+                <Textarea
+                  id="edit_notes"
+                  name="notes"
+                  rows={3}
+                  defaultValue={payment.notes || ""}
+                  placeholder="付款備註（選填）"
+                />
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditPaymentOpen(false)}>
+                  取消
+                </Button>
+                <Button type="submit">儲存</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

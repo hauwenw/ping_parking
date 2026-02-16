@@ -66,6 +66,7 @@ export interface Payment {
   amount: number;
   status: "pending" | "completed" | "voided";
   payment_date: string | null;
+  due_date: string | null;
   bank_reference: string | null;
   notes: string | null;
 }

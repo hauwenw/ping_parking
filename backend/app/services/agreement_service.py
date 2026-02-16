@@ -127,6 +127,7 @@ class AgreementService:
             agreement_id=agreement.id,
             amount=data.price,
             status="pending",
+            due_date=data.start_date,
         )
         self.db.add(payment)
         await self.db.flush()

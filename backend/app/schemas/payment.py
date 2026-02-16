@@ -15,12 +15,23 @@ class PaymentUpdateAmount(BaseModel):
     notes: str = Field(..., min_length=1)
 
 
+class PaymentUpdate(BaseModel):
+    """Comprehensive payment update - all fields optional."""
+    amount: int | None = Field(None, ge=0)
+    status: str | None = Field(None, pattern=r"^(pending|completed|voided)$")
+    payment_date: date | None = None
+    due_date: date | None = None
+    bank_reference: str | None = Field(None, max_length=100)
+    notes: str | None = None
+
+
 class PaymentResponse(BaseModel):
     id: UUID
     agreement_id: UUID
     amount: int
     status: str
     payment_date: date | None
+    due_date: date | None
     bank_reference: str | None
     notes: str | None
 

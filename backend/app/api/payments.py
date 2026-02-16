@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Request
 
 from app.dependencies import CurrentUser, DbSession
-from app.schemas.payment import PaymentComplete, PaymentResponse, PaymentUpdateAmount
+from app.schemas.payment import PaymentComplete, PaymentResponse, PaymentUpdate, PaymentUpdateAmount
 from app.services.payment_service import PaymentService
 
 router = APIRouter(prefix="/payments", tags=["payments"])
@@ -45,4 +45,22 @@ async def update_payment_amount(
 ) -> PaymentResponse:
     svc = PaymentService(db, current_user, _get_ip(request))
     payment = await svc.update_amount(payment_id, data)
+    return PaymentResponse.model_validate(payment)
+
+
+@router.put("/{payment_id}", response_model=PaymentResponse)
+async def update_payment(
+    payment_id: UUID,
+    data: PaymentUpdate,
+    request: Request,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> PaymentResponse:
+    """Update payment details (amount, status, dates, references).
+
+    Allows editing all payments regardless of status.
+    All fields are optional - only provided fields will be updated.
+    """
+    svc = PaymentService(db, current_user, _get_ip(request))
+    payment = await svc.update(payment_id, data)
     return PaymentResponse.model_validate(payment)

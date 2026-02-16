@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.admin_user import AdminUser
 from app.models.payment import Payment
-from app.schemas.payment import PaymentComplete, PaymentUpdateAmount
+from app.schemas.payment import PaymentComplete, PaymentUpdate, PaymentUpdateAmount
 from app.services.audit_logger import AuditLogger
 from app.utils.errors import BusinessError, NotFoundError
 
@@ -83,5 +83,66 @@ class PaymentService:
             user=self.user,
             ip_address=self.ip,
         )
+        await self.db.commit()
+        return payment
+
+    async def update(self, payment_id: UUID, data: PaymentUpdate) -> Payment:
+        """Update payment with any editable fields.
+
+        Allows editing all payments (pending/completed/voided).
+        All fields are optional - only provided fields will be updated.
+        """
+        payment = await self.get(payment_id)
+
+        # Build old_values dict for audit
+        old_values = {}
+
+        # Update amount if provided
+        if data.amount is not None and data.amount != payment.amount:
+            old_values["amount"] = payment.amount
+            payment.amount = data.amount
+
+        # Update status if provided
+        if data.status is not None and data.status != payment.status:
+            old_values["status"] = payment.status
+            payment.status = data.status
+
+        # Update payment_date if provided
+        if data.payment_date is not None and data.payment_date != payment.payment_date:
+            old_values["payment_date"] = str(payment.payment_date) if payment.payment_date else None
+            payment.payment_date = data.payment_date
+
+        # Update due_date if provided
+        if data.due_date is not None and data.due_date != payment.due_date:
+            old_values["due_date"] = str(payment.due_date) if payment.due_date else None
+            payment.due_date = data.due_date
+
+        # Update bank_reference if provided
+        if data.bank_reference is not None and data.bank_reference != payment.bank_reference:
+            old_values["bank_reference"] = payment.bank_reference
+            payment.bank_reference = data.bank_reference
+
+        # Update notes if provided
+        if data.notes is not None and data.notes != payment.notes:
+            old_values["notes"] = payment.notes
+            payment.notes = data.notes
+
+        # Log update if any changes
+        if old_values:
+            new_values = {}
+            for key in old_values.keys():
+                val = getattr(payment, key)
+                new_values[key] = str(val) if val is not None else None
+
+            await self.db.flush()
+            await self.audit.log_update(
+                table_name="payments",
+                record_id=payment.id,
+                old_values=old_values,
+                new_values=new_values,
+                user=self.user,
+                ip_address=self.ip,
+            )
+
         await self.db.commit()
         return payment

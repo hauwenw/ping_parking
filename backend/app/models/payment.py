@@ -18,6 +18,7 @@ class Payment(UUIDMixin, TimestampMixin, Base):
         String(20), default="pending"
     )  # pending, completed, voided
     payment_date: Mapped[date | None] = mapped_column(Date)
+    due_date: Mapped[date | None] = mapped_column(Date)
     bank_reference: Mapped[str | None] = mapped_column(String(100))
     notes: Mapped[str | None] = mapped_column(Text)
 

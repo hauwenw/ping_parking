@@ -115,26 +115,26 @@ async def test_create_agreement_yearly(
 async def test_double_booking_prevented(
     auth_client: AsyncClient, customer_id: str, space_id: str
 ) -> None:
-    # First agreement
+    # First agreement: Feb 15 - Mar 15
     await auth_client.post(
         "/api/v1/agreements",
         json={
             "customer_id": customer_id,
             "space_id": space_id,
             "agreement_type": "monthly",
-            "start_date": "2026-03-01",
+            "start_date": "2026-02-15",
             "price": 3600,
             "license_plates": "ABC-1234",
         },
     )
-    # Second agreement on same space
+    # Second agreement overlaps: Feb 20 - Mar 20
     response = await auth_client.post(
         "/api/v1/agreements",
         json={
             "customer_id": customer_id,
             "space_id": space_id,
             "agreement_type": "monthly",
-            "start_date": "2026-04-01",
+            "start_date": "2026-02-20",
             "price": 3600,
             "license_plates": "XYZ-9999",
         },

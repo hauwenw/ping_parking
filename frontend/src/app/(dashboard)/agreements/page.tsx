@@ -54,7 +54,7 @@ export default function AgreementsPage() {
     const [agreementsData, customersData, spacesData, summaryData] = await Promise.all([
       api.get<Agreement[]>(`/api/v1/agreements?${params.toString()}`),
       api.get<Customer[]>("/api/v1/customers"),
-      api.get<Space[]>("/api/v1/spaces?status=available"),
+      api.get<Space[]>("/api/v1/spaces"),
       api.get<AgreementSummary>("/api/v1/agreements/summary"),
     ]);
     setAgreements(agreementsData);
@@ -137,11 +137,32 @@ export default function AgreementsPage() {
                   <Select name="space_id" required>
                     <SelectTrigger><SelectValue placeholder="選擇車位" /></SelectTrigger>
                     <SelectContent>
-                      {spaces.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>{s.site_name} / {s.name}</SelectItem>
-                      ))}
+                      {spaces
+                        .sort((a, b) => {
+                          // Show available spaces first
+                          if (a.computed_status === "available" && b.computed_status !== "available") return -1;
+                          if (a.computed_status !== "available" && b.computed_status === "available") return 1;
+                          return (a.site_name || "").localeCompare(b.site_name || "");
+                        })
+                        .map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            <span className="flex items-center gap-2">
+                              <span>{s.site_name} / {s.name}</span>
+                              {s.computed_status === "occupied" && (
+                                <span className="text-xs text-muted-foreground">(目前已占用)</span>
+                              )}
+                              {s.computed_status === "available" && (
+                                <span className="text-xs text-green-600">✓ 可用</span>
+                              )}
+                            </span>
+                          </SelectItem>
+                        ))
+                      }
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    可選擇未來日期預約車位（系統會檢查日期是否重疊）
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">

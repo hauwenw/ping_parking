@@ -91,17 +91,21 @@ class AgreementService:
         if space is None:
             raise NotFoundError("車位")
 
-        # Check for active agreement on this space (double booking)
-        active_result = await self.db.execute(
+        # Calculate end date first (needed for overlap check)
+        end_date = _calc_end_date(data.start_date, data.agreement_type)
+
+        # Check for overlapping agreements on this space (date range validation)
+        overlap_result = await self.db.execute(
             select(Agreement).where(
                 Agreement.space_id == data.space_id,
                 Agreement.terminated_at.is_(None),
+                Agreement.start_date < end_date,      # Existing starts before new ends
+                Agreement.end_date > data.start_date, # Existing ends after new starts
             )
         )
-        if active_result.scalar_one_or_none():
+        existing = overlap_result.scalar_one_or_none()
+        if existing:
             raise DoubleBookingError(space.name)
-
-        end_date = _calc_end_date(data.start_date, data.agreement_type)
 
         encrypted_plates = encrypt_license_plate(data.license_plates)
 

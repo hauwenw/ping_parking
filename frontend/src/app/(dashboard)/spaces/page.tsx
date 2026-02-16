@@ -470,6 +470,12 @@ export default function SpacesPage() {
                           查看合約
                         </a>
                       )}
+                      <a
+                        href={`/agreements?create=true&space_id=${s.id}`}
+                        className="text-xs text-green-600 hover:underline"
+                      >
+                        新增合約
+                      </a>
                     </div>
                   </TableCell>
                   <TableCell>

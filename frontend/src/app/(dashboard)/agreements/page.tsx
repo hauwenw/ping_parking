@@ -47,6 +47,14 @@ export default function AgreementsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [terminateId, setTerminateId] = useState<string | null>(null);
 
+  // Price auto-population state
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
+  const [selectedAgreementType, setSelectedAgreementType] = useState<string | null>(null);
+  const [priceValue, setPriceValue] = useState<string>("");
+
+  // Pre-selected space from URL (for quick create from spaces page)
+  const [preselectedSpaceId, setPreselectedSpaceId] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     const params = new URLSearchParams();
     if (customerIdParam) params.set("customer_id", customerIdParam);
@@ -65,6 +73,49 @@ export default function AgreementsPage() {
   }, [customerIdParam]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Handle URL params for quick agreement creation from spaces page
+  useEffect(() => {
+    const shouldCreate = searchParams.get("create") === "true";
+    const spaceId = searchParams.get("space_id");
+
+    if (shouldCreate && spaceId) {
+      setPreselectedSpaceId(spaceId);
+      setSelectedSpaceId(spaceId); // Also set for price auto-population
+      setCreateOpen(true);
+      // Clean up URL params
+      window.history.replaceState({}, "", "/agreements");
+    }
+  }, [searchParams]);
+
+  // Compute price based on space and agreement type
+  const computePrice = (spaceId: string | null, agreementType: string | null): number | null => {
+    if (!spaceId || !agreementType) return null;
+
+    const space = spaces.find((s) => s.id === spaceId);
+    if (!space) return null;
+
+    switch (agreementType) {
+      case "daily":
+        return space.effective_daily_price;
+      case "monthly":
+        return space.effective_monthly_price;
+      case "quarterly":
+        return space.effective_monthly_price ? space.effective_monthly_price * 3 : null;
+      case "yearly":
+        return space.effective_monthly_price ? space.effective_monthly_price * 12 : null;
+      default:
+        return null;
+    }
+  };
+
+  // Auto-populate price when space or agreement type changes
+  useEffect(() => {
+    const price = computePrice(selectedSpaceId, selectedAgreementType);
+    if (price !== null) {
+      setPriceValue(price.toString());
+    }
+  }, [selectedSpaceId, selectedAgreementType, spaces]);
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -134,7 +185,12 @@ export default function AgreementsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>車位</Label>
-                  <Select name="space_id" required>
+                  <Select
+                    name="space_id"
+                    required
+                    defaultValue={preselectedSpaceId || undefined}
+                    onValueChange={(value) => setSelectedSpaceId(value)}
+                  >
                     <SelectTrigger><SelectValue placeholder="選擇車位" /></SelectTrigger>
                     <SelectContent>
                       {spaces
@@ -168,7 +224,7 @@ export default function AgreementsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>合約類型</Label>
-                  <Select name="agreement_type" required>
+                  <Select name="agreement_type" required onValueChange={(value) => setSelectedAgreementType(value)}>
                     <SelectTrigger><SelectValue placeholder="選擇類型" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="monthly">月租</SelectItem>
@@ -186,7 +242,18 @@ export default function AgreementsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price">金額</Label>
-                  <Input id="price" name="price" type="number" min="0" required />
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    min="0"
+                    required
+                    value={priceValue}
+                    onChange={(e) => setPriceValue(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    系統已根據車位及合約類型自動填入，可手動調整
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="license_plates">車牌號碼</Label>
